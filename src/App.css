@@ -574,27 +574,180 @@ code {
 .alliance-btn.active-blue { background: #1e3a8a; color: #93c5fd; }
 .alliance-btn.active-red  { background: #7f1d1d; color: #fca5a5; }
 
-.field-scroll {
+/* ── Viewport (zoom/pan canvas) ── */
+
+.field-viewport {
   flex: 1;
-  overflow: auto;
-  padding: 12px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-light) transparent;
+  position: relative;
+  overflow: hidden;
+  background: #07090f;
+  min-height: 0;
 }
 
-.field-image-wrap {
+/* Floating zoom buttons */
+.zoom-float {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 10;
+}
+
+.zoom-float .zoom-btn {
+  width: 30px; height: 30px;
+  background: rgba(15,23,42,0.85);
+  border: 1px solid var(--border-light);
+  border-radius: 5px;
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, color 0.1s;
+  padding: 0;
+}
+
+.zoom-float .zoom-btn:hover { background: rgba(99,102,241,0.3); color: var(--text); }
+
+/* ── Path range slider ── */
+
+.field-slider-section {
+  flex-shrink: 0;
+  padding: 10px 16px 6px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+
+.slider-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.slider-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.slider-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* Two-thumb slider */
+.path-slider {
+  position: relative;
+  height: 44px;
+  padding: 0 2px;
+  user-select: none;
+}
+
+.slider-ticks {
+  position: absolute;
+  top: 0;
+  left: 2px; right: 2px;
+  height: 10px;
+}
+
+.slider-tick {
+  position: absolute;
+  top: 1px;
+  width: 4px; height: 8px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  transition: opacity 0.15s;
+}
+
+.slider-track {
+  position: absolute;
+  top: 18px;
+  left: 2px; right: 2px;
+  height: 4px;
+  background: var(--border-light);
+  border-radius: 2px;
+}
+
+.slider-track-fill {
+  position: absolute;
+  top: 0; height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.slider-input {
+  position: absolute;
+  top: 8px;
+  left: 0; right: 0;
   width: 100%;
-  margin-bottom: 16px;
+  height: 24px;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
 }
 
-.field-image-wrap img { border-radius: 4px; }
+.slider-input::-webkit-slider-thumb {
+  pointer-events: all;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: grab;
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.35);
+  transition: box-shadow 0.15s;
+}
+
+.slider-input::-webkit-slider-thumb:hover,
+.slider-input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.4);
+}
+
+.slider-input::-moz-range-thumb {
+  pointer-events: all;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: grab;
+  border: 2px solid #0f172a;
+}
+
+.slider-step-labels {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 0 2px;
+}
 
 /* ─── Waypoint table ─────────────────────────────────────────────────────────── */
 
 .field-tables {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 12px 16px;
+  overflow-y: auto;
+  max-height: 240px;
+  border-top: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-light) transparent;
 }
 
 .waypoint-table-wrap {
@@ -633,6 +786,10 @@ code {
 .waypoint-table tr.row-active td {
   background: rgba(99,102,241,0.1);
   color: var(--text);
+}
+
+.waypoint-table tr.row-out-of-range td {
+  opacity: 0.35;
 }
 
 .step-num {
