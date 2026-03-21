@@ -3,7 +3,7 @@ import type { ParsedFile, CommandFunction } from './types/command';
 import { parseFile } from './parser/cppParser';
 import { FileSidebar } from './components/FileSidebar';
 import { CommandPanel } from './components/CommandPanel';
-import { TimelineView } from './components/TimelineView';
+import { Viewer } from './components/Viewer';
 
 export default function App() {
   const [files, setFiles] = useState<ParsedFile[]>([]);
@@ -63,7 +63,7 @@ export default function App() {
         selectedCommand={selectedCommand}
         onSelectCommand={handleSelectCommand}
       />
-      <TimelineView command={selectedCommand} />
+      <Viewer command={selectedCommand} />
     </div>
   );
 }

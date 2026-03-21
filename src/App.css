@@ -443,3 +443,252 @@ code {
 .node-leaf { cursor: default; }
 .node-leaf rect { transition: filter 0.1s; }
 .node-leaf:hover rect { filter: brightness(1.2); }
+
+/* ─── Viewer (tabbed container) ─────────────────────────────────────────────── */
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--viewer-bg);
+}
+
+.viewer-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.viewer-tab {
+  position: relative;
+  padding: 6px 16px;
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.viewer-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+.viewer-tab.active {
+  color: var(--text);
+  background: var(--viewer-bg);
+  border-color: var(--border);
+  margin-bottom: -1px;
+  padding-bottom: 7px;
+}
+
+.viewer-tab.tab-dim { opacity: 0.5; }
+
+.tab-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.viewer-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Field View ────────────────────────────────────────────────────────────── */
+
+.field-view {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.field-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.field-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.field-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px; height: 14px;
+  cursor: pointer;
+}
+
+.alliance-toggle {
+  display: flex;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.alliance-btn {
+  padding: 4px 12px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.alliance-btn.active-blue { background: #1e3a8a; color: #93c5fd; }
+.alliance-btn.active-red  { background: #7f1d1d; color: #fca5a5; }
+
+.field-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-light) transparent;
+}
+
+.field-image-wrap {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.field-image-wrap img { border-radius: 4px; }
+
+/* ─── Waypoint table ─────────────────────────────────────────────────────────── */
+
+.field-tables {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.waypoint-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.waypoint-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.waypoint-table th {
+  padding: 7px 10px;
+  text-align: left;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.waypoint-table td {
+  padding: 6px 10px;
+  color: var(--text-dim);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  white-space: nowrap;
+}
+
+.waypoint-table tr:last-child td { border-bottom: none; }
+
+.waypoint-table tr.row-active td {
+  background: rgba(99,102,241,0.1);
+  color: var(--text);
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pose-cell { font-family: 'Fira Code', monospace; font-size: 11px; }
+
+.named-ref {
+  color: #f59e0b;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* ─── Named pose table ───────────────────────────────────────────────────────── */
+
+.named-pose-table {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.named-pose-header {
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.named-pose-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 12px;
+}
+
+.named-pose-row:last-child { border-bottom: none; }
+
+.named-pose-badge {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.named-pose-meta {
+  color: var(--text-muted);
+  font-size: 11px;
+}
