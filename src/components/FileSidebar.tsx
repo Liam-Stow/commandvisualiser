@@ -4,8 +4,10 @@ import type { ParsedFile } from '../types/command';
 interface Props {
   files: ParsedFile[];
   selectedFile: ParsedFile | null;
+  watching: boolean;
   onSelectFile: (file: ParsedFile) => void;
   onLoadFiles: (files: FileList) => void;
+  onOpenWithPicker: () => void;
 }
 
 function categoryIcon(cat: ParsedFile['category']) {
@@ -16,8 +18,18 @@ function categoryIcon(cat: ParsedFile['category']) {
   }
 }
 
-export function FileSidebar({ files, selectedFile, onSelectFile, onLoadFiles }: Props) {
+export function FileSidebar({ files, selectedFile, watching, onSelectFile, onLoadFiles, onOpenWithPicker }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /** Use the File System Access API picker when available, fall back to the
+   *  hidden <input> for browsers that don't support it (e.g. Firefox). */
+  const handleOpenClick = () => {
+    if ('showDirectoryPicker' in window) {
+      onOpenWithPicker();
+    } else {
+      inputRef.current?.click();
+    }
+  };
 
   const commands   = files.filter(f => f.category === 'commands');
   const subsystems = files.filter(f => f.category === 'subsystems');
@@ -56,13 +68,10 @@ export function FileSidebar({ files, selectedFile, onSelectFile, onLoadFiles }: 
       </div>
 
       <div className="sidebar-actions">
-        <button
-          className="btn-primary"
-          onClick={() => inputRef.current?.click()}
-        >
+        <button className="btn-primary" onClick={handleOpenClick}>
           Open Project Folder
         </button>
-        {/* webkitdirectory lets the user pick an entire folder */}
+        {/* Fallback for browsers without showDirectoryPicker (no file watching) */}
         <input
           ref={inputRef}
           type="file"
@@ -94,6 +103,12 @@ export function FileSidebar({ files, selectedFile, onSelectFile, onLoadFiles }: 
       </div>
 
       <div className="sidebar-footer">
+        {watching && (
+          <span className="watching-badge">
+            <span className="watching-dot" />
+            Live
+          </span>
+        )}
         {files.length > 0 && (
           <span>{files.length} file{files.length !== 1 ? 's' : ''} loaded</span>
         )}
