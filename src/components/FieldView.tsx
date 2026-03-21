@@ -68,6 +68,46 @@ interface RangeSliderProps {
 }
 
 function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  // Middle-drag state: anchor x-pixel and anchor start/end indices
+  const dragRef = useRef<{ anchorX: number; anchorStart: number; anchorEnd: number } | null>(null);
+  const [isDraggingMiddle, setIsDraggingMiddle] = useState(false);
+
+  const onFillMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault(); // prevent native thumb interaction
+    if (!trackRef.current) return;
+    dragRef.current = { anchorX: e.clientX, anchorStart: start, anchorEnd: end };
+    setIsDraggingMiddle(true);
+  }, [start, end]);
+
+  useEffect(() => {
+    if (!isDraggingMiddle) return;
+    const span = end - start;
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current || !trackRef.current) return;
+      const trackWidth = trackRef.current.getBoundingClientRect().width;
+      const deltaPx = e.clientX - dragRef.current.anchorX;
+      const deltaSteps = Math.round(deltaPx * (count - 1) / trackWidth);
+      const newStart = Math.max(0, Math.min(count - 1 - span, dragRef.current.anchorStart + deltaSteps));
+      const newEnd   = newStart + span;
+      onChange(newStart, newEnd);
+    };
+
+    const onMouseUp = () => {
+      dragRef.current = null;
+      setIsDraggingMiddle(false);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isDraggingMiddle, count, start, end, onChange]);
+
   if (count <= 1) return null;
 
   const pct = (i: number) => count > 1 ? (i / (count - 1)) * 100 : 0;
@@ -93,31 +133,41 @@ function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProp
       </div>
 
       {/* Track background + filled range */}
-      <div className="slider-track">
+      <div className="slider-track" ref={trackRef}>
         <div
           className="slider-track-fill"
-          style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
+          style={{
+            left: `${startPct}%`,
+            width: `${endPct - startPct}%`,
+            cursor: isDraggingMiddle ? 'grabbing' : 'grab',
+          }}
+          onMouseDown={onFillMouseDown}
         />
       </div>
 
-      {/* Start thumb — lower z-index unless it's at the max */}
-      <input
-        type="range"
-        className="slider-input"
-        min={0} max={count - 1} step={1}
-        value={start}
-        style={{ zIndex: start >= end ? 5 : 3 }}
-        onChange={e => onChange(Math.min(+e.target.value, end), end)}
-      />
-      {/* End thumb */}
-      <input
-        type="range"
-        className="slider-input"
-        min={0} max={count - 1} step={1}
-        value={end}
-        style={{ zIndex: 4 }}
-        onChange={e => onChange(start, Math.max(+e.target.value, start))}
-      />
+      {/* When thumbs overlap, end goes on top so it can slide right —
+          except when both are at the maximum, where start must be on top to slide left. */}
+      {(() => {
+        const endOnTop = start < end || (start === end && end < count - 1);
+        return (<>
+          <input
+            type="range"
+            className="slider-input"
+            min={0} max={count - 1} step={1}
+            value={start}
+            style={{ zIndex: endOnTop ? 3 : 5 }}
+            onChange={e => onChange(Math.min(+e.target.value, end), end)}
+          />
+          <input
+            type="range"
+            className="slider-input"
+            min={0} max={count - 1} step={1}
+            value={end}
+            style={{ zIndex: endOnTop ? 5 : 4 }}
+            onChange={e => onChange(start, Math.max(+e.target.value, start))}
+          />
+        </>);
+      })()}
 
       <div className="slider-step-labels">
         <span>Step {start + 1}</span>

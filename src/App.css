@@ -678,9 +678,11 @@ code {
 
 .slider-track-fill {
   position: absolute;
-  top: 0; height: 100%;
+  top: -6px; bottom: -6px; /* expanded hit-area above and below the 4px track */
   background: var(--accent);
   border-radius: 2px;
+  z-index: 2;
+  user-select: none;
 }
 
 .slider-input {

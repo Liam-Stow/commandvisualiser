@@ -270,47 +270,61 @@ function applyDecorator(node: AnyCommandNode, name: string, args: string): AnyCo
   }
 }
 
+/**
+ * Match a command factory call regardless of namespace prefix.
+ * Handles frc2::cmd::Name(, cmd::Name(, and plain Name( so that
+ * code using `using namespace frc2::cmd;` or a namespace alias is
+ * parsed correctly.
+ */
+function matchesFn(e: string, fn: string): boolean {
+  return (
+    e.startsWith(`frc2::cmd::${fn}(`) ||
+    e.startsWith(`cmd::${fn}(`) ||
+    e.startsWith(`${fn}(`)
+  );
+}
+
 function parseBaseExpr(expr: string): AnyCommandNode {
   const e = expr.trim();
   if (!e) return { type: 'unknown', id: newId(), raw: '' };
 
-  // ── frc2::cmd::Sequence(...)
-  if (e.startsWith('frc2::cmd::Sequence(')) {
+  // ── Sequence(...)
+  if (matchesFn(e, 'Sequence')) {
     const args = splitTopLevel(getCallArgs(e));
     if (args.length === 0) return makeLeaf(e);
     return { type: 'sequence', id: newId(), children: args.map(parseExpr) };
   }
 
-  // ── frc2::cmd::RepeatingSequence(...)
-  if (e.startsWith('frc2::cmd::RepeatingSequence(')) {
+  // ── RepeatingSequence(...)
+  if (matchesFn(e, 'RepeatingSequence')) {
     const args = splitTopLevel(getCallArgs(e));
     const inner: SequenceNode = { type: 'sequence', id: newId(), children: args.map(parseExpr) };
     return { type: 'modified', id: newId(), modifier: 'repeatedly', child: inner };
   }
 
-  // ── frc2::cmd::Parallel(...)
-  if (e.startsWith('frc2::cmd::Parallel(')) {
+  // ── Parallel(...)
+  if (matchesFn(e, 'Parallel')) {
     const args = splitTopLevel(getCallArgs(e));
     if (args.length === 0) return makeLeaf(e);
     return { type: 'parallel', id: newId(), children: args.map(parseExpr) };
   }
 
-  // ── frc2::cmd::Race(...)
-  if (e.startsWith('frc2::cmd::Race(')) {
+  // ── Race(...)
+  if (matchesFn(e, 'Race')) {
     const args = splitTopLevel(getCallArgs(e));
     if (args.length === 0) return makeLeaf(e);
     return { type: 'race', id: newId(), children: args.map(parseExpr) };
   }
 
-  // ── frc2::cmd::Deadline(deadlineCmd, others...)
-  if (e.startsWith('frc2::cmd::Deadline(')) {
+  // ── Deadline(deadlineCmd, others...)
+  if (matchesFn(e, 'Deadline')) {
     const args = splitTopLevel(getCallArgs(e)).map(parseExpr);
     if (args.length === 0) return makeLeaf(e);
     return { type: 'deadline', id: newId(), deadline: args[0], others: args.slice(1) };
   }
 
-  // ── frc2::cmd::Either(trueCmd, falseCmd, condition) or frc2::ConditionalCommand
-  if (e.startsWith('frc2::cmd::Either(') || e.startsWith('frc2::ConditionalCommand(')) {
+  // ── Either(trueCmd, falseCmd, condition) or frc2::ConditionalCommand
+  if (matchesFn(e, 'Either') || e.startsWith('frc2::ConditionalCommand(')) {
     const args = splitTopLevel(getCallArgs(e));
     if (args.length >= 2) {
       return {
@@ -323,44 +337,44 @@ function parseBaseExpr(expr: string): AnyCommandNode {
     return makeLeaf(e);
   }
 
-  // ── frc2::cmd::Select<T>(...)
-  if (e.startsWith('frc2::cmd::Select')) {
+  // ── Select<T>(...)
+  if (e.startsWith('frc2::cmd::Select') || e.startsWith('cmd::Select') || e.startsWith('Select<') || e.startsWith('Select(')) {
     return { type: 'leaf', id: newId(), name: 'Select()', raw: e };
   }
 
-  // ── frc2::cmd::Wait(time)
-  if (e.startsWith('frc2::cmd::Wait(')) {
+  // ── Wait(time)
+  if (matchesFn(e, 'Wait')) {
     const args = getCallArgs(e);
     return { type: 'leaf', id: newId(), name: `Wait(${args.trim()})`, raw: e };
   }
 
-  // ── frc2::cmd::WaitUntil(cond)
-  if (e.startsWith('frc2::cmd::WaitUntil(')) {
+  // ── WaitUntil(cond)
+  if (matchesFn(e, 'WaitUntil')) {
     return { type: 'leaf', id: newId(), name: 'WaitUntil()', raw: e };
   }
 
-  // ── frc2::cmd::RunOnce(...)
-  if (e.startsWith('frc2::cmd::RunOnce(')) {
+  // ── RunOnce(...)
+  if (matchesFn(e, 'RunOnce')) {
     return { type: 'leaf', id: newId(), name: 'RunOnce()', raw: e };
   }
 
-  // ── frc2::cmd::StartEnd(...)
-  if (e.startsWith('frc2::cmd::StartEnd(')) {
+  // ── StartEnd(...)
+  if (matchesFn(e, 'StartEnd')) {
     return { type: 'leaf', id: newId(), name: 'StartEnd()', raw: e };
   }
 
-  // ── frc2::cmd::Print(...)
-  if (e.startsWith('frc2::cmd::Print(')) {
+  // ── Print(...)
+  if (matchesFn(e, 'Print')) {
     return { type: 'leaf', id: newId(), name: 'Print()', raw: e };
   }
 
-  // ── frc2::cmd::None()
-  if (e.startsWith('frc2::cmd::None(')) {
+  // ── None()
+  if (matchesFn(e, 'None')) {
     return { type: 'leaf', id: newId(), name: 'None()', raw: e };
   }
 
-  // ── frc2::ScheduleCommand(...)
-  if (e.startsWith('frc2::ScheduleCommand(')) {
+  // ── ScheduleCommand(...)
+  if (e.startsWith('frc2::ScheduleCommand(') || matchesFn(e, 'ScheduleCommand')) {
     return { type: 'leaf', id: newId(), name: 'ScheduleCommand()', raw: e };
   }
 
