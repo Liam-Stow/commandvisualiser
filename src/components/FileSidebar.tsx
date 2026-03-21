@@ -51,10 +51,8 @@ export function FileSidebar({ files, selectedFile, onSelectFile, onLoadFiles }: 
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="sidebar-title">
-          <span className="logo">◈</span> FRC Command Visualiser
-        </div>
-        <div className="sidebar-subtitle">ICRobotics</div>
+        <img src="/Logo.White.png" alt="ICRobotics" className="sidebar-logo" />
+        <div className="sidebar-title">FRC Command Visualiser</div>
       </div>
 
       <div className="sidebar-actions">

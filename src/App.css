@@ -3,26 +3,26 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:           #0b0f1a;
-  --sidebar-bg:   #111827;
-  --panel-bg:     #131c2e;
-  --viewer-bg:    #0d1424;
-  --text:         #e2e8f0;
-  --text-dim:     #94a3b8;
-  --text-muted:   #64748b;
-  --border:       #1e293b;
-  --border-light: #334155;
-  --accent:       #6366f1;
-  --accent-hover: #818cf8;
-  --selected-bg:  rgba(99,102,241,0.15);
-  --selected-border: rgba(99,102,241,0.5);
+  --bg:           #161616;
+  --sidebar-bg:   #222222;
+  --panel-bg:     #1c1c1c;
+  --viewer-bg:    #191919;
+  --text:         #ffffff;
+  --text-dim:     #cccccc;
+  --text-muted:   #7f7f7f;
+  --border:       #3c3c3c;
+  --border-light: #525252;
+  --accent:       #c94a1c;
+  --accent-hover: #f35924;
+  --selected-bg:  rgba(243, 89, 36, 0.12);
+  --selected-border: rgba(243, 89, 36, 0.45);
   font-size: 14px;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   height: 100dvh;
   overflow: hidden;
@@ -58,23 +58,20 @@ body {
 .sidebar-title {
   font-size: 15px;
   font-weight: 700;
+  font-family: 'Russo One', sans-serif;
   color: var(--text);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.logo {
-  color: var(--accent);
-  font-size: 18px;
-}
-
-.sidebar-subtitle {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 2px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.sidebar-logo {
+  display: block;
+  height: 36px;
+  width: auto;
+  margin-bottom: 10px;
+  object-fit: contain;
+  object-position: left;
 }
 
 .sidebar-actions {
@@ -125,6 +122,7 @@ body {
   padding: 6px 12px 4px;
   font-size: 10px;
   font-weight: 700;
+  font-family: 'Russo One', sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -392,18 +390,18 @@ body {
   position: absolute;
   z-index: 100;
   pointer-events: none;
-  background: #1e293b;
+  background: #2a2a2a;
   border: 1px solid var(--border-light);
   border-radius: 6px;
   padding: 8px 10px;
   max-width: 480px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
 }
 
 .tooltip code {
   font-family: 'Fira Code', 'Cascadia Code', monospace;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -437,7 +435,7 @@ code {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-thumb:hover { background: #6b6b6b; }
 
 /* SVG hover effects */
 .node-leaf { cursor: default; }
@@ -580,7 +578,7 @@ code {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #07090f;
+  background: #111111;
   min-height: 0;
 }
 
@@ -597,7 +595,7 @@ code {
 
 .zoom-float .zoom-btn {
   width: 30px; height: 30px;
-  background: rgba(15,23,42,0.85);
+  background: rgba(34,34,34,0.9);
   border: 1px solid var(--border-light);
   border-radius: 5px;
   color: var(--text-dim);
@@ -611,7 +609,7 @@ code {
   padding: 0;
 }
 
-.zoom-float .zoom-btn:hover { background: rgba(99,102,241,0.3); color: var(--text); }
+.zoom-float .zoom-btn:hover { background: rgba(201, 74, 28, 0.35); color: var(--text); }
 
 /* ── Path range slider ── */
 
@@ -706,15 +704,15 @@ code {
   border-radius: 50%;
   background: var(--accent);
   cursor: grab;
-  border: 2px solid #0f172a;
-  box-shadow: 0 0 0 2px rgba(99,102,241,0.35);
+  border: 2px solid #161616;
+  box-shadow: 0 0 0 2px rgba(201, 74, 28, 0.35);
   transition: box-shadow 0.15s;
 }
 
 .slider-input::-webkit-slider-thumb:hover,
 .slider-input::-webkit-slider-thumb:active {
   cursor: grabbing;
-  box-shadow: 0 0 0 4px rgba(99,102,241,0.4);
+  box-shadow: 0 0 0 4px rgba(243, 89, 36, 0.45);
 }
 
 .slider-input::-moz-range-thumb {
@@ -723,7 +721,7 @@ code {
   border-radius: 50%;
   background: var(--accent);
   cursor: grab;
-  border: 2px solid #0f172a;
+  border: 2px solid #161616;
 }
 
 .slider-step-labels {
