@@ -34,10 +34,22 @@ body {
 
 .app-layout {
   display: grid;
-  grid-template-columns: 260px 220px 1fr;
+  grid-template-columns: var(--sidebar-w, 260px) 4px var(--panel-w, 220px) 4px 1fr;
   height: 100dvh;
   overflow: hidden;
 }
+
+/* ─── Resize handles ─────────────────────────────────────────────────────── */
+
+.resize-handle {
+  width: 4px;
+  cursor: col-resize;
+  background: var(--border);
+  transition: background 0.15s;
+  z-index: 20;
+}
+
+.resize-handle:hover { background: var(--accent); }
 
 /* ─── Sidebar ──────────────────────────────────────────────────────────────── */
 

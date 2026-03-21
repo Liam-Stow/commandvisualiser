@@ -150,6 +150,35 @@ export default function App() {
     return () => clearInterval(id);
   }, [dirHandle, watching]);
 
+  // ── Column widths ───────────────────────────────────────────────────────────
+  const [sidebarWidth, setSidebarWidth] = useState(260);
+  const [panelWidth,   setPanelWidth]   = useState(220);
+
+  const startResize = useCallback((
+    e: React.MouseEvent,
+    setter: (w: number) => void,
+    currentWidth: number,
+    min = 150,
+    max = 600,
+  ) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev: MouseEvent) => {
+      setter(Math.max(min, Math.min(max, currentWidth + ev.clientX - startX)));
+    };
+    const onUp = () => {
+      document.body.style.cursor     = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup',   onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup',   onUp);
+  }, []);
+
   // ── Selection handlers ──────────────────────────────────────────────────────
   const handleSelectFile = useCallback((file: ParsedFile) => {
     setSelectedFilePath(file.filePath);
@@ -161,7 +190,13 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app-layout">
+    <div
+      className="app-layout"
+      style={{
+        '--sidebar-w': `${sidebarWidth}px`,
+        '--panel-w':   `${panelWidth}px`,
+      } as React.CSSProperties}
+    >
       <FileSidebar
         files={files}
         selectedFile={selectedFile}
@@ -170,10 +205,18 @@ export default function App() {
         onLoadFiles={handleLoadFiles}
         onOpenWithPicker={handleOpenWithPicker}
       />
+      <div
+        className="resize-handle"
+        onMouseDown={e => startResize(e, setSidebarWidth, sidebarWidth)}
+      />
       <CommandPanel
         file={selectedFile}
         selectedCommand={selectedCommand}
         onSelectCommand={handleSelectCommand}
+      />
+      <div
+        className="resize-handle"
+        onMouseDown={e => startResize(e, setPanelWidth, panelWidth)}
       />
       <Viewer command={selectedCommand} />
     </div>
