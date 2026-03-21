@@ -63,7 +63,7 @@ export function FileSidebar({ files, selectedFile, watching, onSelectFile, onLoa
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <img src="/Logo.White.png" alt="ICRobotics" className="sidebar-logo" />
+        <img src={`${import.meta.env.BASE_URL}Logo.White.png`} alt="ICRobotics" className="sidebar-logo" />
         <div className="sidebar-title">Command Visualiser</div>
       </div>
 

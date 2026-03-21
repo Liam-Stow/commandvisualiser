@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 // Extend TypeScript's DOM lib with File System Access API members that are
 // not yet included in the bundled lib.dom.d.ts used by this project.
 

@@ -22,7 +22,7 @@ export interface FieldConfig {
 
 export const FIELD_2026: FieldConfig = {
   name: '2026 Reefscape',
-  imagePath: '/fields/field26.png',
+  imagePath: `${import.meta.env.BASE_URL}fields/field26.png`,
   imageWidthPx: 3508,
   imageHeightPx: 1814,
   pixelsPerMeter: 200,
