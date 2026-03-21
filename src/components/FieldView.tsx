@@ -514,11 +514,11 @@ export function FieldView({ command }: Props) {
         <div className="field-controls">
           <label className="toggle-label">
             <input type="checkbox" checked={showTolerance} onChange={e => setShowTolerance(e.target.checked)} />
-            Pos tolerance
+            Translation Tolerance
           </label>
           <label className="toggle-label">
             <input type="checkbox" checked={showRotation} onChange={e => setShowRotation(e.target.checked)} />
-            Rotation
+            Rotation Tolerance
           </label>
           <div className="alliance-toggle">
             <button className={`alliance-btn ${!redAlliance ? 'active-blue' : ''}`} onClick={() => setRedAlliance(false)}>Blue</button>
