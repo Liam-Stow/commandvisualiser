@@ -97,7 +97,7 @@ relying on bracket-depth tracking and known WPILib patterns.
 | `parallel` | runs all children simultaneously, ends when all finish | `children[]` |
 | `race` | runs all children, ends when the first finishes | `children[]` |
 | `deadline` | like race but one specific child is the "deadline" | `deadline`, `others[]` |
-| `decorated` | wraps a child with a decorator (timeout, repeatedly, etc.) | `modifier`, `child` |
+| `decorated` | wraps a child with a decorator (timeout, repeatedly, etc.) | `decorator`, `child` |
 | `conditional` | either/else branch | `trueBranch`, `falseBranch` |
 | `leaf` | a single command (subsystem call or factory with no children) | `name`, `subsystem?` |
 | `unknown` | parse failed | `raw` |

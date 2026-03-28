@@ -21,17 +21,17 @@ const TYPE_STYLE: Record<string, {
 
 const GROUP_BODY_FILL = '#0f172a';
 
-// ─── Modifier header label ────────────────────────────────────────────────────
+// ─── Decorator header label ───────────────────────────────────────────────────
 
-function modifierLabel(modifier: string, arg?: string): string {
-  switch (modifier) {
+function decoratorLabel(decorator: string, arg?: string): string {
+  switch (decorator) {
     case 'timeout':         return arg ? `TIMEOUT ${arg}` : 'TIMEOUT';
     case 'until':           return 'UNTIL (…)';
     case 'repeatedly':      return 'REPEATEDLY';
     case 'unless':          return 'UNLESS (…)';
     case 'onlyIf':          return 'ONLY IF (…)';
     case 'ignoringDisable': return 'IGNORE DISABLE';
-    default:                return modifier.toUpperCase();
+    default:                return decorator.toUpperCase();
   }
 }
 
@@ -142,7 +142,7 @@ function RenderNode({
   const style     = TYPE_STYLE[command.type] ?? TYPE_STYLE.sequence;
   const isDecorated = command.type === 'decorated';
   const headerLabel = isDecorated
-    ? modifierLabel((command as DecoratedNode).modifier, (command as DecoratedNode).modifierArg)
+    ? decoratorLabel((command as DecoratedNode).decorator, (command as DecoratedNode).decoratorArg)
     : style.label;
   const clipId = `clip-${command.id}`;
 

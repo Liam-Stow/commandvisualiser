@@ -16,7 +16,7 @@ export interface LayoutNode {
 
 export const L_LEAF_W   = 150;   // leaf width
 export const L_LEAF_H   = 60;    // leaf height
-export const L_HEADER_H = 26;    // group / modifier header strip height
+export const L_HEADER_H = 26;    // group / decorator header strip height
 export const L_PAD      = 8;     // space between a group's border and its children
 export const L_GAP      = 6;     // space between sibling children
 

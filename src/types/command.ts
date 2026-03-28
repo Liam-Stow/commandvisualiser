@@ -45,8 +45,8 @@ export interface LeafNode extends BaseNode {
 
 export interface DecoratedNode extends BaseNode {
   type: 'decorated';
-  modifier: string;
-  modifierArg?: string;
+  decorator: string;
+  decoratorArg?: string;
   child: AnyCommandNode;
 }
 

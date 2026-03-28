@@ -12,7 +12,7 @@ function commandTypePreview(cmd: CommandFunction): string {
     case 'parallel':    return 'PAR';
     case 'race':        return 'RACE';
     case 'deadline':    return 'DEADLINE';
-    case 'decorated':   return cmd.node.modifier.toUpperCase();
+    case 'decorated':   return cmd.node.decorator.toUpperCase();
     case 'conditional': return 'IF/ELSE';
     case 'leaf':        return 'CMD';
     default:            return '?';
