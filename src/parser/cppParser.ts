@@ -236,8 +236,7 @@ function applyDecorator(node: AnyCommandNode, name: string, args: string): AnyCo
     case 'DeadlineWith': {
       // Current node IS the deadline; argNode runs alongside
       if (!argNode) return node;
-      const others = argNode.type === 'parallel' ? argNode.children : [argNode];
-      return { type: 'deadline', id: newId(), deadline: node, others } as DeadlineNode;
+      return { type: 'deadline', id: newId(), deadline: node, others: [argNode] } as DeadlineNode;
     }
 
     case 'WithDeadline': {
