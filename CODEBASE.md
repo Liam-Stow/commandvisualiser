@@ -97,7 +97,7 @@ relying on bracket-depth tracking and known WPILib patterns.
 | `parallel` | runs all children simultaneously, ends when all finish | `children[]` |
 | `race` | runs all children, ends when the first finishes | `children[]` |
 | `deadline` | like race but one specific child is the "deadline" | `deadline`, `others[]` |
-| `modified` | wraps a child with a modifier (timeout, repeatedly, etc.) | `modifier`, `child` |
+| `decorated` | wraps a child with a decorator (timeout, repeatedly, etc.) | `decorator`, `child` |
 | `conditional` | either/else branch | `trueBranch`, `falseBranch` |
 | `leaf` | a single command (subsystem call or factory with no children) | `name`, `subsystem?` |
 | `unknown` | parse failed | `raw` |
@@ -111,9 +111,9 @@ relying on bracket-depth tracking and known WPILib patterns.
 | `.RaceWith(B)` | Wraps current + B in a `race` |
 | `.DeadlineFor(B)` / `.DeadlineWith(B)` | Current node becomes deadline, B runs alongside |
 | `.WithDeadline(D)` | D becomes deadline, current node runs alongside |
-| `.WithTimeout(t)` | `modified` with `modifier: 'timeout'` |
-| `.Until(cond)` | `modified` with `modifier: 'until'` |
-| `.Repeatedly()` | `modified` with `modifier: 'repeatedly'` |
+| `.WithTimeout(t)` | `decorated` with `decorator: 'timeout'` |
+| `.Until(cond)` | `decorated` with `decorator: 'until'` |
+| `.Repeatedly()` | `decorated` with `decorator: 'repeatedly'` |
 
 ---
 
@@ -127,7 +127,7 @@ Each unit represents one "time slot" wide, one "track" tall.
 | `leaf` / `unknown` | 1 | 1 |
 | `sequence` | sum of children's widths | max of children's heights |
 | `parallel` / `race` / `deadline` | max of children's widths | sum of children's heights |
-| `modified` | same as inner child | same as inner child |
+| `decorated` | same as inner child | same as inner child |
 | `conditional` | max of branch widths | sum of branch heights |
 
 `TimelineView` then multiplies these abstract units by a pixel scale factor

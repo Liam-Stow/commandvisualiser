@@ -5,7 +5,7 @@ import type {
   RaceNode,
   DeadlineNode,
   LeafNode,
-  ModifiedNode,
+  DecoratedNode,
   ConditionalNode,
   CommandFunction,
   ParsedFile,
@@ -248,25 +248,25 @@ function applyDecorator(node: AnyCommandNode, name: string, args: string): AnyCo
     }
 
     case 'WithTimeout':
-      return { type: 'modified', id: newId(), modifier: 'timeout', modifierArg: args.trim(), child: node } as ModifiedNode;
+      return { type: 'decorated', id: newId(), decorator: 'timeout', decoratorArg: args.trim(), child: node } as DecoratedNode;
 
     case 'Until':
-      return { type: 'modified', id: newId(), modifier: 'until', child: node } as ModifiedNode;
+      return { type: 'decorated', id: newId(), decorator: 'until', child: node } as DecoratedNode;
 
     case 'Unless':
-      return { type: 'modified', id: newId(), modifier: 'unless', child: node } as ModifiedNode;
+      return { type: 'decorated', id: newId(), decorator: 'unless', child: node } as DecoratedNode;
 
     case 'OnlyIf':
-      return { type: 'modified', id: newId(), modifier: 'onlyIf', child: node } as ModifiedNode;
+      return { type: 'decorated', id: newId(), decorator: 'onlyIf', child: node } as DecoratedNode;
 
     case 'Repeatedly':
-      return { type: 'modified', id: newId(), modifier: 'repeatedly', child: node } as ModifiedNode;
+      return { type: 'decorated', id: newId(), decorator: 'repeatedly', child: node } as DecoratedNode;
 
     case 'IgnoringDisable':
-      return { type: 'modified', id: newId(), modifier: 'ignoringDisable', modifierArg: args.trim(), child: node } as ModifiedNode;
+      return { type: 'decorated', id: newId(), decorator: 'ignoringDisable', decoratorArg: args.trim(), child: node } as DecoratedNode;
 
     default:
-      return { type: 'modified', id: newId(), modifier: name, child: node } as ModifiedNode;
+      return { type: 'decorated', id: newId(), decorator: name, child: node } as DecoratedNode;
   }
 }
 
@@ -299,7 +299,7 @@ function parseBaseExpr(expr: string): AnyCommandNode {
   if (matchesFn(e, 'RepeatingSequence')) {
     const args = splitTopLevel(getCallArgs(e));
     const inner: SequenceNode = { type: 'sequence', id: newId(), children: args.map(parseExpr) };
-    return { type: 'modified', id: newId(), modifier: 'repeatedly', child: inner };
+    return { type: 'decorated', id: newId(), decorator: 'repeatedly', child: inner };
   }
 
   // ── Parallel(...)

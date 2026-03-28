@@ -12,7 +12,7 @@ function commandTypePreview(cmd: CommandFunction): string {
     case 'parallel':    return 'PAR';
     case 'race':        return 'RACE';
     case 'deadline':    return 'DEADLINE';
-    case 'modified':    return cmd.node.modifier.toUpperCase();
+    case 'decorated':   return cmd.node.decorator.toUpperCase();
     case 'conditional': return 'IF/ELSE';
     case 'leaf':        return 'CMD';
     default:            return '?';
@@ -35,7 +35,7 @@ function childCount(cmd: CommandFunction): number {
   if (n.type === 'sequence' || n.type === 'parallel' || n.type === 'race') return n.children.length;
   if (n.type === 'deadline') return 1 + n.others.length;
   if (n.type === 'conditional') return 2;
-  if (n.type === 'modified') return 1;
+  if (n.type === 'decorated') return 1;
   return 0;
 }
 
