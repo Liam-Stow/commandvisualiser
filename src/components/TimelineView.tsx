@@ -14,7 +14,7 @@ const TYPE_STYLE: Record<string, {
   sequence:    { headerBg: '#1e40af', border: '#3b82f6', labelFg: '#dbeafe', label: 'SEQUENCE'    },
   parallel:    { headerBg: '#15803d', border: '#22c55e', labelFg: '#dcfce7', label: 'PARALLEL'    },
   race:        { headerBg: '#c2410c', border: '#f97316', labelFg: '#ffedd5', label: 'RACE'        },
-  deadline:    { headerBg: '#7e22ce', border: '#a855f7', labelFg: '#f3e8ff', label: 'DEADLINE'    },
+  deadline:    { headerBg: '#441270', border: '#552b7c', labelFg: '#f3e8ff', label: 'DEADLINE'    },
   modified:    { headerBg: '#334155', border: '#64748b', labelFg: '#e2e8f0', label: 'MODIFIED'    },
   conditional: { headerBg: '#92400e', border: '#f59e0b', labelFg: '#fef3c7', label: 'IF/ELSE'     },
 };
