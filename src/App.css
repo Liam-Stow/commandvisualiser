@@ -421,10 +421,17 @@ body {
   white-space: nowrap;
 }
 
+.legend-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-light);
+  flex-shrink: 0;
+}
+
 /* ─── Tooltip ──────────────────────────────────────────────────────────────── */
 
 .tooltip {
-  position: absolute;
+  position: fixed;
   z-index: 100;
   pointer-events: none;
   background: #2a2a2a;
