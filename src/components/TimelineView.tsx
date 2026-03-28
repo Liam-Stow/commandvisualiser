@@ -197,22 +197,6 @@ function RenderNode({
         >⏱</text>
       )}
 
-      {/* TRUE / FALSE labels for conditional branches */}
-      {command.type === 'conditional' && children.map((child, i) => (
-        <text
-          key={`cond-${i}`}
-          x={child.x * zoom + 5 * zoom}
-          y={child.y * zoom + 10 * zoom}
-          fontSize={8}
-          fontWeight="700"
-          fill={style.labelFg}
-          opacity={0.75}
-          style={{ pointerEvents: 'none' }}
-        >
-          {i === 0 ? 'TRUE' : 'FALSE'}
-        </text>
-      ))}
-
       {/* Deadline divider between deadline child and the others */}
       {command.type === 'deadline' && children.length > 1 && (() => {
         const c0 = children[0];
@@ -236,6 +220,22 @@ function RenderNode({
           ctx={ctx}
           isDeadlineChild={command.type === 'deadline' && deadlineChildIndex === i}
         />
+      ))}
+
+      {/* TRUE / FALSE labels for conditional branches — rendered after children so they appear on top */}
+      {command.type === 'conditional' && children.map((child, i) => (
+        <text
+          key={`cond-${i}`}
+          x={child.x * zoom + 5 * zoom}
+          y={child.y * zoom + 10 * zoom}
+          fontSize={8}
+          fontWeight="700"
+          fill={style.labelFg}
+          opacity={0.75}
+          style={{ pointerEvents: 'none' }}
+        >
+          {i === 0 ? 'TRUE' : 'FALSE'}
+        </text>
       ))}
     </g>
   );
