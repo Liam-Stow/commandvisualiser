@@ -25,7 +25,7 @@ const GROUP_BODY_FILL = '#0f172a';
 
 function modifierLabel(modifier: string, arg?: string): string {
   switch (modifier) {
-    case 'timeout':         return arg ? `TIMEOUT  ${arg}` : 'TIMEOUT';
+    case 'timeout':         return arg ? `TIMEOUT ${arg}` : 'TIMEOUT';
     case 'until':           return 'UNTIL (…)';
     case 'repeatedly':      return 'REPEATEDLY';
     case 'unless':          return 'UNLESS (…)';
@@ -57,12 +57,10 @@ function truncate(text: string, maxChars: number) {
 function RenderNode({
   layout,
   ctx,
-  parentColor,
   isDeadlineChild = false,
 }: {
   layout: LayoutNode;
   ctx: RenderCtx;
-  parentColor?: string;
   isDeadlineChild?: boolean;
 }) {
   const { command, x, y, width, height, children, deadlineChildIndex } = layout;
@@ -87,7 +85,7 @@ function RenderNode({
 
     const showSub   = !!subsystem && gh > 34;
     const nameY     = showSub ? gy + gh * 0.63 : gy + gh * 0.5;
-    const subY      = gy + 11;
+    const subY      = gy + gh * 0.2;
 
     return (
       <g
@@ -236,7 +234,6 @@ function RenderNode({
           key={child.command.id}
           layout={child}
           ctx={ctx}
-          parentColor={style.border}
           isDeadlineChild={command.type === 'deadline' && deadlineChildIndex === i}
         />
       ))}
@@ -265,9 +262,10 @@ function Legend() {
           <span>{label}</span>
         </div>
       ))}
+      <div className="legend-divider" />
       <div className="legend-item">
         <span style={{ fontSize: 14, lineHeight: 1 }}>⏱</span>
-        <span>Deadline</span>
+        <span>Deadline child</span>
       </div>
     </div>
   );
