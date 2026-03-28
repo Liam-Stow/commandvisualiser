@@ -347,6 +347,10 @@ describe('complex trees', () => {
 });
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
+// Note: hover-triggered tooltip display is not tested here because jsdom does
+// not synthesise mousemove/mouseenter events on SVG elements reliably. The
+// tooltip's visible state is driven by onMouseEnter/onMouseLeave handlers on
+// SVG <g> elements, which are not exercised in this environment.
 
 describe('tooltip', () => {
   it('does not show tooltip initially', () => {
