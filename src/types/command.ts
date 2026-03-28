@@ -4,7 +4,7 @@ export type CommandNodeType =
   | 'race'
   | 'deadline'
   | 'leaf'
-  | 'modified'
+  | 'decorated'
   | 'conditional'
   | 'unknown';
 
@@ -43,8 +43,8 @@ export interface LeafNode extends BaseNode {
   raw: string;
 }
 
-export interface ModifiedNode extends BaseNode {
-  type: 'modified';
+export interface DecoratedNode extends BaseNode {
+  type: 'decorated';
   modifier: string;
   modifierArg?: string;
   child: AnyCommandNode;
@@ -68,7 +68,7 @@ export type AnyCommandNode =
   | RaceNode
   | DeadlineNode
   | LeafNode
-  | ModifiedNode
+  | DecoratedNode
   | ConditionalNode
   | UnknownNode;
 

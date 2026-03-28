@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import type { CommandFunction, ModifiedNode } from '../types/command';
+import type { CommandFunction, DecoratedNode } from '../types/command';
 import type { LayoutNode } from '../utils/layout';
 import { computeLayout, L_HEADER_H } from '../utils/layout';
 
@@ -15,7 +15,7 @@ const TYPE_STYLE: Record<string, {
   parallel:    { headerBg: '#15803d', border: '#22c55e', labelFg: '#dcfce7', label: 'PARALLEL'    },
   race:        { headerBg: '#c2410c', border: '#f97316', labelFg: '#ffedd5', label: 'RACE'        },
   deadline:    { headerBg: '#441270', border: '#552b7c', labelFg: '#f3e8ff', label: 'DEADLINE'    },
-  modified:    { headerBg: '#334155', border: '#64748b', labelFg: '#e2e8f0', label: 'MODIFIED'    },
+  decorated:   { headerBg: '#334155', border: '#64748b', labelFg: '#e2e8f0', label: 'DECORATED'   },
   conditional: { headerBg: '#92400e', border: '#f59e0b', labelFg: '#fef3c7', label: 'IF/ELSE'     },
 };
 
@@ -140,9 +140,9 @@ function RenderNode({
 
   // ── Group nodes ─────────────────────────────────────────────────────────────
   const style     = TYPE_STYLE[command.type] ?? TYPE_STYLE.sequence;
-  const isModified = command.type === 'modified';
-  const headerLabel = isModified
-    ? modifierLabel((command as ModifiedNode).modifier, (command as ModifiedNode).modifierArg)
+  const isDecorated = command.type === 'decorated';
+  const headerLabel = isDecorated
+    ? modifierLabel((command as DecoratedNode).modifier, (command as DecoratedNode).modifierArg)
     : style.label;
   const clipId = `clip-${command.id}`;
 
@@ -161,14 +161,14 @@ function RenderNode({
         <rect x={gx} y={gy} width={gw} height={hh} fill={style.headerBg} />
       </g>
 
-      {/* Border — dashed for modified, solid for everything else */}
+      {/* Border — dashed for decorated, solid for everything else */}
       <rect
         x={gx} y={gy} width={gw} height={gh}
         rx={6}
         fill="none"
         stroke={style.border}
-        strokeWidth={isModified ? 1.5 : 2}
-        strokeDasharray={isModified ? '6 3' : undefined}
+        strokeWidth={isDecorated ? 1.5 : 2}
+        strokeDasharray={isDecorated ? '6 3' : undefined}
       />
 
       {/* Header type label */}
@@ -250,7 +250,7 @@ function Legend() {
     { label: 'Race',     style: TYPE_STYLE.race        },
     { label: 'Deadline', style: TYPE_STYLE.deadline    },
     { label: 'If/Else',  style: TYPE_STYLE.conditional },
-    { label: 'Modified', style: TYPE_STYLE.modified, dash: true },
+    { label: 'Decorated', style: TYPE_STYLE.decorated, dash: true },
   ];
   return (
     <div className="legend">

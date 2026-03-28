@@ -170,7 +170,7 @@ export function extractWaypoints(node: AnyCommandNode): DriveWaypoint[] {
     case 'deadline':
       return [node.deadline, ...node.others].flatMap(extractWaypoints);
 
-    case 'modified':
+    case 'decorated':
       return extractWaypoints(node.child);
 
     case 'conditional':

@@ -41,8 +41,8 @@ export function computeLayout(node: AnyCommandNode, x = 0, y = 0): LayoutNode {
     case 'unknown':
       return { command: node, x, y, width: L_LEAF_W, height: L_LEAF_H, children: [] };
 
-    // ── Modified (until, timeout, repeatedly, …) ─────────────────────────────
-    case 'modified': {
+    // ── Decorated (until, timeout, repeatedly, …) ────────────────────────────
+    case 'decorated': {
       const child = computeLayout(node.child, x + L_PAD, y + L_HEADER_H + L_PAD);
       return {
         command: node, x, y,
