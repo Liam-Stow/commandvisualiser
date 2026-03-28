@@ -111,9 +111,9 @@ relying on bracket-depth tracking and known WPILib patterns.
 | `.RaceWith(B)` | Wraps current + B in a `race` |
 | `.DeadlineFor(B)` / `.DeadlineWith(B)` | Current node becomes deadline, B runs alongside |
 | `.WithDeadline(D)` | D becomes deadline, current node runs alongside |
-| `.WithTimeout(t)` | `decorated` with `modifier: 'timeout'` |
-| `.Until(cond)` | `decorated` with `modifier: 'until'` |
-| `.Repeatedly()` | `decorated` with `modifier: 'repeatedly'` |
+| `.WithTimeout(t)` | `decorated` with `decorator: 'timeout'` |
+| `.Until(cond)` | `decorated` with `decorator: 'until'` |
+| `.Repeatedly()` | `decorated` with `decorator: 'repeatedly'` |
 
 ---
 
