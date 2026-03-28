@@ -2,84 +2,112 @@ import type { AnyCommandNode } from '../types/command';
 
 export interface LayoutNode {
   command: AnyCommandNode;
-  x: number;      // start time (in abstract units)
-  y: number;      // start track index
-  width: number;  // duration (in units)
-  height: number; // number of tracks occupied
+  x: number;        // absolute x in SVG space at zoom=1
+  y: number;        // absolute y in SVG space at zoom=1
+  width: number;    // total width  (px at zoom=1)
+  height: number;   // total height (px at zoom=1)
   children: LayoutNode[];
-  /** For deadline nodes, marks which child index is the deadline */
   deadlineChildIndex?: number;
 }
 
+// ─── Sizing constants (px at zoom=1) ─────────────────────────────────────────
+// All group heights include the header strip and inner padding, so children are
+// always positioned below the header — eliminating any possibility of overlap.
+
+export const L_LEAF_W   = 150;   // leaf width
+export const L_LEAF_H   = 60;    // leaf height
+export const L_HEADER_H = 26;    // group / modifier header strip height
+export const L_PAD      = 8;     // space between a group's border and its children
+export const L_GAP      = 6;     // space between sibling children
+
+// ─── Layout helpers ───────────────────────────────────────────────────────────
+
+function emptyGroup(node: AnyCommandNode, x: number, y: number): LayoutNode {
+  return {
+    command: node, x, y,
+    width:  L_LEAF_W  + L_PAD * 2,
+    height: L_LEAF_H  + L_HEADER_H + L_PAD * 2,
+    children: [],
+  };
+}
+
+// ─── Public layout entry point ────────────────────────────────────────────────
+
 export function computeLayout(node: AnyCommandNode, x = 0, y = 0): LayoutNode {
   switch (node.type) {
+
+    // ── Leaf / unknown ────────────────────────────────────────────────────────
     case 'leaf':
     case 'unknown':
-      return { command: node, x, y, width: 1, height: 1, children: [] };
+      return { command: node, x, y, width: L_LEAF_W, height: L_LEAF_H, children: [] };
 
+    // ── Modified (until, timeout, repeatedly, …) ─────────────────────────────
     case 'modified': {
-      const inner = computeLayout(node.child, x, y);
-      return { command: node, x, y, width: inner.width, height: inner.height, children: [inner] };
-    }
-
-    case 'sequence': {
-      if (node.children.length === 0)
-        return { command: node, x, y, width: 1, height: 1, children: [] };
-
-      let curX = x;
-      const children = node.children.map(child => {
-        const layout = computeLayout(child, curX, y);
-        curX += layout.width;
-        return layout;
-      });
-      const maxHeight = Math.max(...children.map(c => c.height));
-      return { command: node, x, y, width: curX - x, height: maxHeight, children };
-    }
-
-    case 'parallel':
-    case 'race': {
-      if (node.children.length === 0)
-        return { command: node, x, y, width: 1, height: 1, children: [] };
-
-      let curY = y;
-      const children = node.children.map(child => {
-        const layout = computeLayout(child, x, curY);
-        curY += layout.height;
-        return layout;
-      });
-      const maxWidth = Math.max(...children.map(c => c.width));
-      return { command: node, x, y, width: maxWidth, height: curY - y, children };
-    }
-
-    case 'deadline': {
-      // First child = deadline (index 0), then others
-      const allNodes = [node.deadline, ...node.others];
-      if (allNodes.length === 0)
-        return { command: node, x, y, width: 1, height: 1, children: [] };
-
-      let curY = y;
-      const children = allNodes.map(child => {
-        const layout = computeLayout(child, x, curY);
-        curY += layout.height;
-        return layout;
-      });
-      const maxWidth = Math.max(...children.map(c => c.width));
-      return {
-        command: node, x, y, width: maxWidth, height: curY - y,
-        children, deadlineChildIndex: 0,
-      };
-    }
-
-    case 'conditional': {
-      const trueLayout  = computeLayout(node.trueBranch,  x, y);
-      const falseLayout = computeLayout(node.falseBranch, x, y + trueLayout.height);
-      const maxWidth    = Math.max(trueLayout.width, falseLayout.width);
+      const child = computeLayout(node.child, x + L_PAD, y + L_HEADER_H + L_PAD);
       return {
         command: node, x, y,
-        width:  maxWidth,
-        height: trueLayout.height + falseLayout.height,
-        children: [trueLayout, falseLayout],
+        width:  child.width  + L_PAD * 2,
+        height: child.height + L_HEADER_H + L_PAD * 2,
+        children: [child],
       };
+    }
+
+    // ── Sequence ──────────────────────────────────────────────────────────────
+    case 'sequence': {
+      if (node.children.length === 0) return emptyGroup(node, x, y);
+      const childY = y + L_HEADER_H + L_PAD;
+      let curX = x + L_PAD;
+      const children = node.children.map(c => {
+        const child = computeLayout(c, curX, childY);
+        curX += child.width + L_GAP;
+        return child;
+      });
+      const w = (curX - L_GAP - x) + L_PAD;
+      const h = L_HEADER_H + L_PAD + Math.max(...children.map(c => c.height)) + L_PAD;
+      return { command: node, x, y, width: w, height: h, children };
+    }
+
+    // ── Parallel / Race ───────────────────────────────────────────────────────
+    case 'parallel':
+    case 'race': {
+      if (node.children.length === 0) return emptyGroup(node, x, y);
+      let curY = y + L_HEADER_H + L_PAD;
+      const children = node.children.map(c => {
+        const child = computeLayout(c, x + L_PAD, curY);
+        curY += child.height + L_GAP;
+        return child;
+      });
+      const w = L_PAD + Math.max(...children.map(c => c.width)) + L_PAD;
+      const h = (curY - L_GAP - y) + L_PAD;
+      return { command: node, x, y, width: w, height: h, children };
+    }
+
+    // ── Deadline ──────────────────────────────────────────────────────────────
+    case 'deadline': {
+      const allNodes = [node.deadline, ...node.others];
+      if (allNodes.length === 0) return emptyGroup(node, x, y);
+      let curY = y + L_HEADER_H + L_PAD;
+      const children = allNodes.map(c => {
+        const child = computeLayout(c, x + L_PAD, curY);
+        curY += child.height + L_GAP;
+        return child;
+      });
+      const w = L_PAD + Math.max(...children.map(c => c.width)) + L_PAD;
+      const h = (curY - L_GAP - y) + L_PAD;
+      return { command: node, x, y, width: w, height: h, children, deadlineChildIndex: 0 };
+    }
+
+    // ── Conditional (either/else) ─────────────────────────────────────────────
+    case 'conditional': {
+      const trueLayout  = computeLayout(node.trueBranch,  x + L_PAD, y + L_HEADER_H + L_PAD);
+      const falseLayout = computeLayout(
+        node.falseBranch,
+        x + L_PAD,
+        y + L_HEADER_H + L_PAD + trueLayout.height + L_GAP,
+      );
+      const w = L_PAD + Math.max(trueLayout.width, falseLayout.width) + L_PAD;
+      const h = L_HEADER_H + L_PAD + trueLayout.height + L_GAP + falseLayout.height + L_PAD;
+      return { command: node, x, y, width: w, height: h, children: [trueLayout, falseLayout] };
     }
   }
 }
