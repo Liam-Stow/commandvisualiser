@@ -15,7 +15,7 @@ const TYPE_STYLE: Record<string, {
   parallel:    { headerBg: '#15803d', border: '#22c55e', labelFg: '#dcfce7', label: 'PARALLEL'    },
   race:        { headerBg: '#c2410c', border: '#f97316', labelFg: '#ffedd5', label: 'RACE'        },
   deadline:    { headerBg: '#441270', border: '#552b7c', labelFg: '#f3e8ff', label: 'DEADLINE'    },
-  decorated:   { headerBg: '#334155', border: '#64748b', labelFg: '#e2e8f0', label: 'DECORATED'   },
+  decorated:   { headerBg: '#334155', border: '#64748b', labelFg: '#e2e8f0', label: 'DECORATOR'   },
   conditional: { headerBg: '#92400e', border: '#f59e0b', labelFg: '#fef3c7', label: 'IF/ELSE'     },
 };
 
@@ -250,7 +250,7 @@ function Legend() {
     { label: 'Race',     style: TYPE_STYLE.race        },
     { label: 'Deadline', style: TYPE_STYLE.deadline    },
     { label: 'If/Else',  style: TYPE_STYLE.conditional },
-    { label: 'Decorated', style: TYPE_STYLE.decorated, dash: true },
+    { label: 'Decorator', style: TYPE_STYLE.decorated, dash: true },
   ];
   return (
     <div className="legend">
