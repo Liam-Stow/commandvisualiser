@@ -85,7 +85,6 @@ export function computeLayout(node: AnyCommandNode, x = 0, y = 0): LayoutNode {
     // ── Deadline ──────────────────────────────────────────────────────────────
     case 'deadline': {
       const allNodes = [node.deadline, ...node.others];
-      if (allNodes.length === 0) return emptyGroup(node, x, y);
       let curY = y + L_HEADER_H + L_PAD;
       const children = allNodes.map(c => {
         const child = computeLayout(c, x + L_PAD, curY);

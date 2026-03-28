@@ -201,8 +201,8 @@ function RenderNode({
       {command.type === 'conditional' && children.map((child, i) => (
         <text
           key={`cond-${i}`}
-          x={child.x * zoom + 5}
-          y={child.y * zoom + 10}
+          x={child.x * zoom + 5 * zoom}
+          y={child.y * zoom + 10 * zoom}
           fontSize={8}
           fontWeight="700"
           fill={style.labelFg}
