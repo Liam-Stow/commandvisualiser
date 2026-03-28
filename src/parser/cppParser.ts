@@ -243,8 +243,7 @@ function applyDecorator(node: AnyCommandNode, name: string, args: string): AnyCo
     case 'WithDeadline': {
       // argNode IS the deadline; current node runs alongside it
       if (!argNode) return node;
-      const currentChildren = node.type === 'parallel' ? node.children : [node];
-      return { type: 'deadline', id: newId(), deadline: argNode, others: currentChildren } as DeadlineNode;
+      return { type: 'deadline', id: newId(), deadline: argNode, others: [node] } as DeadlineNode;
     }
 
     case 'WithTimeout':
