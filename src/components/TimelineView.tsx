@@ -262,10 +262,9 @@ function Legend() {
           <span>{label}</span>
         </div>
       ))}
-      <div className="legend-divider" />
       <div className="legend-item">
         <span style={{ fontSize: 14, lineHeight: 1 }}>⏱</span>
-        <span>Deadline child</span>
+        <span>Deadline</span>
       </div>
     </div>
   );
