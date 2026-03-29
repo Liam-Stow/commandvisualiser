@@ -17,6 +17,8 @@ export interface DriveWaypoint {
   rotTolDeg: number;
   flipForRed: boolean;
   raw: string;
+  /** id of the LeafNode this waypoint came from — used for cross-highlighting */
+  nodeId: string;
 }
 
 // ─── Unit parsing ─────────────────────────────────────────────────────────────
@@ -123,7 +125,7 @@ function parseDriveToPose(raw: string): DriveWaypoint | null {
   const rotTolDeg    = args[3] ? parseDeg(args[3])    : 2.0;
   const flipForRed   = args[4] ? args[4].trim() !== 'false' : true;
 
-  return { command: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw };
+  return { command: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw, nodeId: '' };
 }
 
 function parseDriveOverBump(raw: string): DriveWaypoint | null {
@@ -145,7 +147,7 @@ function parseDriveOverBump(raw: string): DriveWaypoint | null {
     }
   }
 
-  return { command: 'DriveOverBump', pose, speedScaling: 1, posTolMeters: 0.05, rotTolDeg: 5, flipForRed: true, raw };
+  return { command: 'DriveOverBump', pose, speedScaling: 1, posTolMeters: 0.05, rotTolDeg: 5, flipForRed: true, raw, nodeId: '' };
 }
 
 // ─── Tree walker ──────────────────────────────────────────────────────────────
@@ -154,9 +156,9 @@ export function extractWaypoints(node: AnyCommandNode): DriveWaypoint[] {
   switch (node.type) {
     case 'leaf': {
       const dtp = parseDriveToPose(node.raw);
-      if (dtp) return [dtp];
+      if (dtp) return [{ ...dtp, nodeId: node.id }];
       const dob = parseDriveOverBump(node.raw);
-      if (dob) return [dob];
+      if (dob) return [{ ...dob, nodeId: node.id }];
       return [];
     }
 

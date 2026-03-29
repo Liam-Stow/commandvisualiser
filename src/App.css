@@ -325,7 +325,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 6px 16px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   gap: 16px;
@@ -486,7 +486,7 @@ code {
 .node-leaf rect { transition: filter 0.1s; }
 .node-leaf:hover rect { filter: brightness(1.2); }
 
-/* ─── Viewer (tabbed container) ─────────────────────────────────────────────── */
+/* ─── Viewer ─────────────────────────────────────────────────────────────────── */
 
 .viewer {
   display: flex;
@@ -495,55 +495,38 @@ code {
   background: var(--viewer-bg);
 }
 
-.viewer-tabs {
+/* Split layout: field on top, timeline below */
+.viewer-split {
   display: flex;
-  gap: 2px;
-  padding: 8px 12px 0;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.viewer-tab {
-  position: relative;
-  padding: 6px 16px;
-  background: none;
-  border: 1px solid transparent;
-  border-bottom: none;
-  border-radius: 5px 5px 0 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+.viewer-field-pane {
+  flex-shrink: 0;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  border-bottom: none; /* handled by resize handle */
 }
 
-.viewer-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-
-.viewer-tab.active {
-  color: var(--text);
-  background: var(--viewer-bg);
-  border-color: var(--border);
-  margin-bottom: -1px;
-  padding-bottom: 7px;
-}
-
-.viewer-tab.tab-dim { opacity: 0.5; }
-
-.tab-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #22c55e;
+.resize-handle-h {
+  height: 4px;
+  cursor: row-resize;
+  background: var(--border);
   flex-shrink: 0;
+  z-index: 20;
+  transition: background 0.15s;
 }
 
-.viewer-content {
+.resize-handle-h:hover { background: var(--accent); }
+
+.viewer-timeline-pane {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 /* ─── Field View ────────────────────────────────────────────────────────────── */
@@ -559,7 +542,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  padding: 5px 14px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   gap: 12px;
@@ -659,36 +642,15 @@ code {
 
 .field-slider-section {
   flex-shrink: 0;
-  padding: 10px 16px 6px;
+  padding: 5px 16px 3px;
   border-top: 1px solid var(--border);
   background: rgba(255,255,255,0.02);
-}
-
-.slider-header {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.slider-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-
-.slider-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  opacity: 0.6;
 }
 
 /* Two-thumb slider */
 .path-slider {
   position: relative;
-  height: 44px;
+  height: 34px;
   padding: 0 2px;
   user-select: none;
 }
@@ -697,13 +659,13 @@ code {
   position: absolute;
   top: 0;
   left: 2px; right: 2px;
-  height: 10px;
+  height: 7px;
 }
 
 .slider-tick {
   position: absolute;
   top: 1px;
-  width: 4px; height: 8px;
+  width: 3px; height: 6px;
   border-radius: 2px;
   transform: translateX(-50%);
   transition: opacity 0.15s;
@@ -711,7 +673,7 @@ code {
 
 .slider-track {
   position: absolute;
-  top: 18px;
+  top: 13px;
   left: 2px; right: 2px;
   height: 4px;
   background: var(--border-light);
@@ -729,7 +691,7 @@ code {
 
 .slider-input {
   position: absolute;
-  top: 8px;
+  top: 3px;
   left: 0; right: 0;
   width: 100%;
   height: 24px;
@@ -768,91 +730,78 @@ code {
   border: 2px solid #161616;
 }
 
-.slider-step-labels {
-  position: absolute;
-  bottom: 0;
-  left: 0; right: 0;
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--text-muted);
-  padding: 0 2px;
+
+/* ─── Field waypoint tooltip ─────────────────────────────────────────────────── */
+
+.field-waypoint-tooltip {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  background: #1e293b;
+  border: 1px solid var(--border-light);
+  border-radius: 7px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+  min-width: 140px;
 }
 
-/* ─── Waypoint table ─────────────────────────────────────────────────────────── */
+.fwt-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+}
 
-.field-tables {
+.fwt-index-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 16px;
-  overflow-y: auto;
-  max-height: 240px;
-  border-top: 1px solid var(--border);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-light) transparent;
 }
 
-.waypoint-table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+.fwt-command {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
 }
 
-.waypoint-table {
-  width: 100%;
+.fwt-table {
   border-collapse: collapse;
+  width: 100%;
   font-size: 12px;
 }
 
-.waypoint-table th {
-  padding: 7px 10px;
-  text-align: left;
-  background: rgba(255,255,255,0.04);
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-
-.waypoint-table td {
-  padding: 6px 10px;
+.fwt-table td {
+  padding: 2px 0;
   color: var(--text-dim);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  white-space: nowrap;
 }
 
-.waypoint-table tr:last-child td { border-bottom: none; }
+.fwt-table td:first-child {
+  color: var(--text-muted);
+  font-size: 11px;
+  padding-right: 10px;
+  white-space: nowrap;
+  font-family: monospace;
+}
 
-.waypoint-table tr.row-active td {
-  background: rgba(99,102,241,0.1);
+.fwt-table td:last-child {
+  font-family: 'Fira Code', monospace;
   color: var(--text);
 }
 
-.waypoint-table tr.row-out-of-range td {
-  opacity: 0.35;
-}
-
-.step-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.pose-cell { font-family: 'Fira Code', monospace; font-size: 11px; }
-
-.named-ref {
-  color: #f59e0b;
+.fwt-named {
   font-family: monospace;
-  font-size: 11px;
+  font-size: 12px;
+  color: #f59e0b;
+}
+
+/* ─── Named pose section ────────────────────────────────────────────────────── */
+
+.field-named-section {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
 }
 
 /* ─── Named pose table ───────────────────────────────────────────────────────── */

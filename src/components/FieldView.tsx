@@ -1,12 +1,10 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import type { CommandFunction } from '../types/command';
 import type { DriveWaypoint, WaypointPose } from '../parser/driveToPoseParser';
-import { extractWaypoints } from '../parser/driveToPoseParser';
 import {
   ACTIVE_FIELD,
   type FieldConfig,
   fieldToImagePx,
-  fieldWidthMeters,
   flipXForRed,
   flipRotForRed,
 } from '../config/fields';
@@ -70,12 +68,11 @@ interface RangeSliderProps {
 function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
 
-  // Middle-drag state: anchor x-pixel and anchor start/end indices
   const dragRef = useRef<{ anchorX: number; anchorStart: number; anchorEnd: number } | null>(null);
   const [isDraggingMiddle, setIsDraggingMiddle] = useState(false);
 
   const onFillMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault(); // prevent native thumb interaction
+    e.preventDefault();
     if (!trackRef.current) return;
     dragRef.current = { anchorX: e.clientX, anchorStart: start, anchorEnd: end };
     setIsDraggingMiddle(true);
@@ -116,7 +113,6 @@ function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProp
 
   return (
     <div className="path-slider">
-      {/* Per-waypoint tick marks above the track */}
       <div className="slider-ticks" aria-hidden="true">
         {waypoints.map((wp, i) => (
           <div
@@ -132,7 +128,6 @@ function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProp
         ))}
       </div>
 
-      {/* Track background + filled range */}
       <div className="slider-track" ref={trackRef}>
         <div
           className="slider-track-fill"
@@ -145,8 +140,6 @@ function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProp
         />
       </div>
 
-      {/* When thumbs overlap, end goes on top so it can slide right —
-          except when both are at the maximum, where start must be on top to slide left. */}
       {(() => {
         const endOnTop = start < end || (start === end && end < count - 1);
         return (<>
@@ -168,23 +161,11 @@ function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProp
           />
         </>);
       })()}
-
-      <div className="slider-step-labels">
-        <span>Step {start + 1}</span>
-        <span>Showing {end - start + 1} of {count} steps</span>
-        <span>Step {end + 1}</span>
-      </div>
     </div>
   );
 }
 
 // ─── SVG overlay elements ─────────────────────────────────────────────────────
-
-/** Convert field coords → image-pixel coords. Flip is already applied to the pose upstream. */
-function poseToImgPx(cfg: FieldConfig, pose: WaypointPose): [number, number] | null {
-  if (pose.kind !== 'numeric') return null;
-  return fieldToImagePx(cfg, pose.x, pose.y);
-}
 
 interface MarkerProps {
   wp: DriveWaypoint;
@@ -205,7 +186,6 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
   const [ix, iy] = fieldToImagePx(cfg, pose.x, pose.y);
   const color = speedColor(wp.speedScaling);
 
-  // Screen-constant sizes expressed in image pixels
   const R       = 11 / scale;
   const fSize   = 9.5 / scale;
   const arrowL  = 28 / scale;
@@ -213,7 +193,6 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
   const arrowX  = ix + arrowL * Math.cos(rotRad);
   const arrowY  = iy - arrowL * Math.sin(rotRad);
 
-  // Tolerance in image pixels (field-scale)
   const tolR = wp.posTolMeters * cfg.pixelsPerMeter;
 
   if (ghost) {
@@ -228,8 +207,8 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
   }
 
   return (
-    <g onMouseEnter={() => onHover(index)} onMouseLeave={() => onHover(null)}>
-      {/* Tolerance ring */}
+    <g>
+      {/* Decorative elements — no pointer events so they don't expand the hover target */}
       {showTolerance && tolR > 1 && (
         <circle
           cx={ix} cy={iy} r={tolR}
@@ -237,61 +216,51 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
           stroke="#60a5fa"
           strokeWidth={1.2 / scale}
           strokeDasharray={`${6 / scale} ${4 / scale}`}
+          style={{ pointerEvents: 'none' }}
         />
       )}
-
-      {/* Rotation tolerance wedge */}
       {showRotation && wp.rotTolDeg > 0 && (
         <path
           d={arcPath(ix, iy, arrowL + 8 / scale, pose.rotation - wp.rotTolDeg, pose.rotation + wp.rotTolDeg)}
           fill="rgba(250,204,21,0.1)"
           stroke="#facc15"
           strokeWidth={0.8 / scale}
+          style={{ pointerEvents: 'none' }}
         />
       )}
-
-      {/* Rotation arrow */}
-      {showRotation && (
+      {showRotation && isFinite(arrowX) && isFinite(arrowY) && (
         <>
           <line
             x1={ix} y1={iy} x2={arrowX} y2={arrowY}
             stroke={active ? '#fff' : '#cbd5e1'}
             strokeWidth={(active ? 2.2 : 1.6) / scale}
+            style={{ pointerEvents: 'none' }}
           />
           <polygon
             points={arrowHeadPoints(ix, iy, arrowX, arrowY, 6 / scale)}
             fill={active ? '#fff' : '#cbd5e1'}
+            style={{ pointerEvents: 'none' }}
           />
         </>
       )}
 
-      {/* Pose circle */}
+      {/* Pose circle — sole hover target */}
       <circle
         cx={ix} cy={iy} r={active ? R * 1.2 : R}
         fill={color}
         stroke={active ? '#fff' : 'rgba(0,0,0,0.45)'}
         strokeWidth={(active ? 2 : 1.5) / scale}
+        onMouseEnter={() => onHover(index)}
+        onMouseLeave={() => onHover(null)}
       />
       <text
         x={ix} y={iy}
         textAnchor="middle" dominantBaseline="central"
         fontSize={fSize} fontWeight="700" fill="#fff"
+        style={{ pointerEvents: 'none' }}
       >
         {index + 1}
       </text>
-
-      {/* Hover badge */}
-      {active && (() => {
-        const bw = 52 / scale, bh = 16 / scale, bx = ix + R + 3 / scale, by = iy - bh / 2;
-        return (
-          <g>
-            <rect x={bx} y={by} width={bw} height={bh} rx={3 / scale} fill="#1e293b" stroke={color} strokeWidth={1 / scale} />
-            <text x={bx + bw / 2} y={iy} textAnchor="middle" dominantBaseline="central" fontSize={8 / scale} fontWeight="700" fill={color}>
-              {Math.round(wp.speedScaling * 100)}% speed
-            </text>
-          </g>
-        );
-      })()}
     </g>
   );
 }
@@ -354,52 +323,9 @@ function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale }: PathLinesPro
   return <>{lines}</>;
 }
 
-// ─── Named / details tables ───────────────────────────────────────────────────
+// ─── Named pose list ──────────────────────────────────────────────────────────
 
-function WaypointTable({ waypoints, hoveredIndex, rangeStart, rangeEnd }:
-  { waypoints: DriveWaypoint[]; hoveredIndex: number | null; rangeStart: number; rangeEnd: number }) {
-  return (
-    <div className="waypoint-table-wrap">
-      <table className="waypoint-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Pose (x, y, θ)</th>
-            <th>Speed</th>
-            <th>Pos tol</th>
-            <th>Rot tol</th>
-            <th>Alliance flip</th>
-          </tr>
-        </thead>
-        <tbody>
-          {waypoints.map((wp, i) => {
-            const pose = wp.pose;
-            const active = hoveredIndex === i;
-            const inRange = i >= rangeStart && i <= rangeEnd;
-            return (
-              <tr key={i} className={active ? 'row-active' : inRange ? '' : 'row-out-of-range'}>
-                <td>
-                  <span className="step-num" style={{ background: speedColor(wp.speedScaling) }}>{i + 1}</span>
-                </td>
-                <td className="pose-cell">
-                  {pose.kind === 'numeric'
-                    ? <><b>{pose.x.toFixed(2)}</b>m, <b>{pose.y.toFixed(2)}</b>m, <b>{pose.rotation.toFixed(0)}</b>°</>
-                    : <span className="named-ref">{pose.name}</span>}
-                </td>
-                <td style={{ color: speedColor(wp.speedScaling) }}>{Math.round(wp.speedScaling * 100)}%</td>
-                <td>±{(wp.posTolMeters * 100).toFixed(0)} cm</td>
-                <td>{wp.command === 'DriveToPose' ? `±${wp.rotTolDeg.toFixed(0)}°` : '—'}</td>
-                <td>{wp.flipForRed ? 'Yes' : 'No'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function NamedPoseTable({ waypoints }: { waypoints: DriveWaypoint[] }) {
+function NamedPoseList({ waypoints }: { waypoints: DriveWaypoint[] }) {
   const named = waypoints.filter(wp => wp.pose.kind === 'named');
   if (named.length === 0) return null;
   return (
@@ -419,14 +345,49 @@ function NamedPoseTable({ waypoints }: { waypoints: DriveWaypoint[] }) {
   );
 }
 
+// ─── Waypoint tooltip ─────────────────────────────────────────────────────────
+
+function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number }) {
+  const pose = wp.pose;
+  return (
+    <div className="tooltip field-waypoint-tooltip" style={{ left: x, top: y }}>
+      <div className="fwt-header">
+        <span className="fwt-index-dot" style={{ background: speedColor(wp.speedScaling) }} />
+        <span className="fwt-command">{wp.command}</span>
+      </div>
+      {pose.kind === 'numeric' ? (
+        <table className="fwt-table">
+          <tbody>
+            <tr><td>X</td><td>{pose.x.toFixed(3)} m</td></tr>
+            <tr><td>Y</td><td>{pose.y.toFixed(3)} m</td></tr>
+            <tr><td>θ</td><td>{pose.rotation.toFixed(1)}°</td></tr>
+            <tr><td>Speed</td><td style={{ color: speedColor(wp.speedScaling) }}>{Math.round(wp.speedScaling * 100)}%</td></tr>
+            <tr><td>Pos tol</td><td>±{(wp.posTolMeters * 100).toFixed(0)} cm</td></tr>
+            {wp.command === 'DriveToPose' && <tr><td>Rot tol</td><td>±{wp.rotTolDeg.toFixed(0)}°</td></tr>}
+          </tbody>
+        </table>
+      ) : (
+        <div className="fwt-named">{pose.name}</div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
-const MIN_SCALE_FACTOR = 0.5;  // fraction of fit scale
-const MAX_SCALE_FACTOR = 10;   // fraction of fit scale
+const MIN_SCALE_FACTOR = 0.5;
+const MAX_SCALE_FACTOR = 10;
 
-interface Props { command: CommandFunction | null }
+interface Props {
+  command: CommandFunction | null;
+  /** Pre-extracted raw waypoints from Viewer (avoids duplicate extraction) */
+  waypoints: DriveWaypoint[];
+  /** Currently highlighted waypoint index — controlled by parent */
+  hoveredIndex: number | null;
+  onHoverIndex: (i: number | null) => void;
+}
 
-export function FieldView({ command }: Props) {
+export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHoverIndex }: Props) {
   const cfg = ACTIVE_FIELD;
 
   // ── Zoom / pan ──────────────────────────────────────────────────────────────
@@ -438,6 +399,7 @@ export function FieldView({ command }: Props) {
 
   const [scale, setScale] = useState(0.2);
   const [pan,   setPan  ] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const applyFit = useCallback(() => {
     const f = fitRef.current;
@@ -454,7 +416,6 @@ export function FieldView({ command }: Props) {
       const s = Math.min(w / cfg.imageWidthPx, h / cfg.imageHeightPx) * 0.97;
       const fit = { scale: s, x: (w - cfg.imageWidthPx * s) / 2, y: (h - cfg.imageHeightPx * s) / 2 };
       fitRef.current = fit;
-      // Only auto-fit on first load (scale still at initialised value)
       setScale(prev => (prev === 0.2 ? fit.scale : prev));
       setPan(prev => (prev.x === 0 && prev.y === 0 ? { x: fit.x, y: fit.y } : prev));
     };
@@ -486,6 +447,7 @@ export function FieldView({ command }: Props) {
   }, [pan]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX + 16, y: e.clientY + 8 });
     if (!isDragging.current) return;
     hasMoved.current = true;
     setPan({
@@ -499,11 +461,15 @@ export function FieldView({ command }: Props) {
     (e.currentTarget as HTMLElement).style.cursor = 'grab';
   }, []);
 
+  // Stable callback: suppress hover only while actively dragging, not after.
+  const handleWaypointHover = useCallback((i: number | null) => {
+    if (!isDragging.current) onHoverIndex(i);
+  }, [onHoverIndex]);
+
   const zoomBy = useCallback((factor: number) => {
     const fitS = fitRef.current.scale;
     setScale(prev => {
       const next = Math.min(Math.max(prev * factor, fitS * MIN_SCALE_FACTOR), fitS * MAX_SCALE_FACTOR);
-      // Zoom toward centre of viewport
       const el = viewportRef.current;
       if (el) {
         const cx = el.clientWidth / 2, cy = el.clientHeight / 2;
@@ -517,22 +483,15 @@ export function FieldView({ command }: Props) {
   const [redAlliance,   setRedAlliance  ] = useState(false);
   const [showTolerance, setShowTolerance] = useState(true);
   const [showRotation,  setShowRotation ] = useState(true);
-  const [hoveredIndex,  setHoveredIndex ] = useState<number | null>(null);
   const [rangeStart,    setRangeStart   ] = useState(0);
   const [rangeEnd,      setRangeEnd     ] = useState(0);
 
   // ── Waypoints ───────────────────────────────────────────────────────────────
-  const rawWaypoints = useMemo(
-    () => command ? extractWaypoints(command.node) : [],
-    [command],
-  );
-
   const waypoints = useMemo(
     () => rawWaypoints.map(wp => applyAllianceFlip(wp, redAlliance, cfg)),
     [rawWaypoints, redAlliance, cfg],
   );
 
-  // Reset range when waypoints change
   useEffect(() => {
     setRangeStart(0);
     setRangeEnd(Math.max(0, waypoints.length - 1));
@@ -555,6 +514,7 @@ export function FieldView({ command }: Props) {
 
   // ── Render ────────────────────────────────────────────────────────────────
   const W = cfg.imageWidthPx, H = cfg.imageHeightPx;
+  const hoveredWp = hoveredIndex !== null ? waypoints[hoveredIndex] : null;
 
   return (
     <div className="field-view">
@@ -588,7 +548,6 @@ export function FieldView({ command }: Props) {
         onMouseLeave={handleMouseUp}
         style={{ cursor: 'grab' }}
       >
-        {/* Transformed content */}
         <div
           style={{
             position: 'absolute',
@@ -603,12 +562,10 @@ export function FieldView({ command }: Props) {
             draggable={false}
             style={{ display: 'block', userSelect: 'none' }}
           />
-          {/* SVG overlay — all coordinates in image pixels */}
           <svg
             style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
             width={W} height={H}
           >
-            {/* Path lines (below markers) */}
             <PathLines
               waypoints={waypoints}
               rangeStart={rangeStart}
@@ -617,7 +574,6 @@ export function FieldView({ command }: Props) {
               scale={scale}
             />
 
-            {/* Waypoint markers */}
             {waypoints.map((wp, i) => (
               <WaypointMarker
                 key={i}
@@ -629,7 +585,7 @@ export function FieldView({ command }: Props) {
                 ghost={i < rangeStart || i > rangeEnd}
                 showTolerance={showTolerance}
                 showRotation={showRotation}
-                onHover={hasMoved.current ? () => {} : setHoveredIndex}
+                onHover={handleWaypointHover}
               />
             ))}
           </svg>
@@ -641,14 +597,15 @@ export function FieldView({ command }: Props) {
           <button className="zoom-btn" onClick={() => zoomBy(1 / 1.25)} title="Zoom out">−</button>
           <button className="zoom-btn" onClick={applyFit} title="Fit to screen">⤢</button>
         </div>
+
+        {/* Waypoint tooltip */}
+        {hoveredWp && (
+          <WaypointTooltip wp={hoveredWp} x={mousePos.x} y={mousePos.y} />
+        )}
       </div>
 
       {/* ── Path range slider ── */}
       <div className="field-slider-section">
-        <div className="slider-header">
-          <span className="slider-title">Path steps</span>
-          <span className="slider-hint">Drag handles to focus on a portion of the route</span>
-        </div>
         <RangeSlider
           count={waypoints.length}
           start={rangeStart}
@@ -656,17 +613,6 @@ export function FieldView({ command }: Props) {
           waypoints={waypoints}
           onChange={(s, e) => { setRangeStart(s); setRangeEnd(e); }}
         />
-      </div>
-
-      {/* ── Detail tables ── */}
-      <div className="field-tables">
-        <WaypointTable
-          waypoints={waypoints}
-          hoveredIndex={hoveredIndex}
-          rangeStart={rangeStart}
-          rangeEnd={rangeEnd}
-        />
-        <NamedPoseTable waypoints={rawWaypoints} />
       </div>
     </div>
   );
