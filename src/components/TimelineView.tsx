@@ -301,16 +301,16 @@ export function Legend() {
 
 interface Props {
   command: CommandFunction | null;
-  /** Zoom level — controlled by Viewer */
-  zoom: number;
-  setZoom: React.Dispatch<React.SetStateAction<number>>;
+  /** Zoom level — controlled by Viewer (defaults to 1.0 if used standalone) */
+  zoom?: number;
+  setZoom?: React.Dispatch<React.SetStateAction<number>>;
   /** Drive waypoints for cross-highlighting with the field view */
   waypoints?: DriveWaypoint[];
   hoveredWaypointIndex?: number | null;
   onHoverWaypointIndex?: (i: number | null) => void;
 }
 
-export function TimelineView({ command, zoom, setZoom, waypoints, hoveredWaypointIndex, onHoverWaypointIndex }: Props) {
+export function TimelineView({ command, zoom = 1.0, setZoom = () => {}, waypoints, hoveredWaypointIndex, onHoverWaypointIndex }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const handleHover = useCallback((t: TooltipState | null) => setTooltip(t), []);

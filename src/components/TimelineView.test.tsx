@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TimelineView } from './TimelineView';
+import { TimelineView, Legend } from './TimelineView';
 import type { CommandFunction, AnyCommandNode } from '../types/command';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -42,23 +42,8 @@ describe('SVG rendering', () => {
     const { container } = render(<TimelineView command={makeCmd('Drive', leaf('d'))} />);
     expect(container.querySelector('svg')).not.toBeNull();
   });
-
-  it('shows command name in toolbar', () => {
-    render(<TimelineView command={makeCmd('ScoreHighCommand', leaf('a'))} />);
-    expect(screen.getByText('ScoreHighCommand')).toBeTruthy();
-  });
-
-  it('shows full name in toolbar when different from short name', () => {
-    render(<TimelineView command={makeCmd('ScoreHigh', leaf('a'), 'MyAuto::ScoreHigh')} />);
-    expect(screen.getByText('ScoreHigh')).toBeTruthy();
-    expect(screen.getByText('MyAuto::ScoreHigh')).toBeTruthy();
-  });
-
-  it('does not show full name when it equals short name', () => {
-    const { container } = render(<TimelineView command={makeCmd('ScoreHigh', leaf('a'))} />);
-    // The timeline-cmd-full span should not be rendered
-    expect(container.querySelector('.timeline-cmd-full')).toBeNull();
-  });
+  // Note: command name display has moved to ViewerHeader in Viewer.tsx and is
+  // no longer rendered by TimelineView directly.
 });
 
 // ─── Node type headers in SVG ─────────────────────────────────────────────────
@@ -222,6 +207,8 @@ describe('leaf names', () => {
 });
 
 // ─── Zoom controls ────────────────────────────────────────────────────────────
+// Zoom state is now controlled externally by Viewer. TimelineView receives
+// zoom and setZoom as props, so tests use a vi.fn() spy to verify callbacks.
 
 describe('zoom controls', () => {
   it('renders zoom in, zoom out, and reset buttons', () => {
@@ -231,39 +218,41 @@ describe('zoom controls', () => {
     expect(screen.getByTitle('Reset zoom')).toBeTruthy();
   });
 
-  it('starts at 100% zoom', () => {
-    render(<TimelineView command={makeCmd('Test', leaf('a'))} />);
-    expect(screen.getByText('100%')).toBeTruthy();
-  });
-
-  it('increases zoom when + is clicked', () => {
-    render(<TimelineView command={makeCmd('Test', leaf('a'))} />);
+  it('calls setZoom with an updater that increases zoom by 0.15 when + is clicked', () => {
+    const setZoom = vi.fn();
+    render(<TimelineView command={makeCmd('Test', leaf('a'))} zoom={1.0} setZoom={setZoom} />);
     fireEvent.click(screen.getByTitle('Zoom in'));
-    // 100% + 15% = 115%
-    expect(screen.getByText('115%')).toBeTruthy();
+    expect(setZoom).toHaveBeenCalledOnce();
+    const updater = setZoom.mock.calls[0][0] as (z: number) => number;
+    expect(updater(1.0)).toBeCloseTo(1.15);
+    expect(updater(3.0)).toBeCloseTo(3.0); // clamped at max
   });
 
-  it('decreases zoom when − is clicked', () => {
-    render(<TimelineView command={makeCmd('Test', leaf('a'))} />);
+  it('calls setZoom with an updater that decreases zoom by 0.15 when − is clicked', () => {
+    const setZoom = vi.fn();
+    render(<TimelineView command={makeCmd('Test', leaf('a'))} zoom={1.0} setZoom={setZoom} />);
     fireEvent.click(screen.getByTitle('Zoom out'));
-    // 100% - 15% = 85%
-    expect(screen.getByText('85%')).toBeTruthy();
+    expect(setZoom).toHaveBeenCalledOnce();
+    const updater = setZoom.mock.calls[0][0] as (z: number) => number;
+    expect(updater(1.0)).toBeCloseTo(0.85);
+    expect(updater(0.3)).toBeCloseTo(0.3); // clamped at min
   });
 
-  it('resets zoom to 100% when ↺ is clicked', () => {
-    render(<TimelineView command={makeCmd('Test', leaf('a'))} />);
-    fireEvent.click(screen.getByTitle('Zoom in'));
-    fireEvent.click(screen.getByTitle('Zoom in'));
+  it('calls setZoom with 1 when ↺ is clicked', () => {
+    const setZoom = vi.fn();
+    render(<TimelineView command={makeCmd('Test', leaf('a'))} zoom={1.3} setZoom={setZoom} />);
     fireEvent.click(screen.getByTitle('Reset zoom'));
-    expect(screen.getByText('100%')).toBeTruthy();
+    expect(setZoom).toHaveBeenCalledWith(1);
   });
 });
 
 // ─── Legend ───────────────────────────────────────────────────────────────────
+// Legend is exported from TimelineView and rendered by ViewerHeader (not inside
+// TimelineView itself), so we test it as a standalone component.
 
 describe('legend', () => {
   it('shows all node type labels in the legend', () => {
-    render(<TimelineView command={makeCmd('Test', leaf('a'))} />);
+    render(<Legend />);
     expect(screen.getByText('Sequence')).toBeTruthy();
     expect(screen.getByText('Parallel')).toBeTruthy();
     expect(screen.getByText('Race')).toBeTruthy();
