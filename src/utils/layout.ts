@@ -15,10 +15,10 @@ export interface LayoutNode {
 // always positioned below the header — eliminating any possibility of overlap.
 
 export const L_LEAF_W   = 150;   // leaf width
-export const L_LEAF_H   = 60;    // leaf height
-export const L_HEADER_H = 26;    // group / decorator header strip height
-export const L_PAD      = 8;     // space between a group's border and its children
-export const L_GAP      = 6;     // space between sibling children
+export const L_LEAF_H   = 46;    // leaf height
+export const L_HEADER_H = 22;    // group / decorator header strip height
+export const L_PAD      = 7;     // space between a group's border and its children
+export const L_GAP      = 5;     // space between sibling children
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 

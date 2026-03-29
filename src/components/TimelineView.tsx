@@ -1,6 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+// zoom is now a prop; useState kept for tooltip only
 import type { CommandFunction, DecoratedNode } from '../types/command';
 import type { LayoutNode } from '../utils/layout';
+import type { DriveWaypoint } from '../parser/driveToPoseParser';
 import { computeLayout, L_HEADER_H } from '../utils/layout';
 
 // ─── Group type styles ────────────────────────────────────────────────────────
@@ -44,6 +46,10 @@ interface TooltipState { x: number; y: number; content: string }
 interface RenderCtx {
   zoom: number;
   onHover: (t: TooltipState | null) => void;
+  /** Map from leaf nodeId → waypoint index for cross-highlighting */
+  driveNodeMap: Map<string, number>;
+  hoveredWaypointIndex: number | null;
+  onHoverWaypointIndex: ((i: number | null) => void) | undefined;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -64,7 +70,7 @@ function RenderNode({
   isDeadlineChild?: boolean;
 }) {
   const { command, x, y, width, height, children, deadlineChildIndex } = layout;
-  const { zoom, onHover } = ctx;
+  const { zoom, onHover, driveNodeMap, hoveredWaypointIndex, onHoverWaypointIndex } = ctx;
 
   const gx = x * zoom;
   const gy = y * zoom;
@@ -78,6 +84,10 @@ function RenderNode({
     const name      = command.type === 'leaf' ? command.name : '?';
     const subsystem = command.type === 'leaf' ? command.subsystem : undefined;
 
+    const waypointIndex = command.type === 'leaf' ? (driveNodeMap.get(command.id) ?? null) : null;
+    const isDriveLine   = waypointIndex !== null;
+    const isWpHovered   = isDriveLine && hoveredWaypointIndex === waypointIndex;
+
     const padH  = 8;
     const textX = gx + padH;
     const textW = gw - padH * 2;
@@ -87,21 +97,39 @@ function RenderNode({
     const nameY     = showSub ? gy + gh * 0.63 : gy + gh * 0.5;
     const subY      = gy + gh * 0.2;
 
+    // Highlight when this leaf's waypoint is being hovered from the field
+    const fillColor  = isWpHovered ? '#1a3a2a' : '#1e293b';
+    const strokeColor = isWpHovered ? '#22c55e' : isDriveLine ? '#2d6a45' : '#475569';
+    const strokeWidth = isWpHovered ? 2 : isDriveLine ? 1.5 : 1.5;
+
     return (
       <g
         style={{ cursor: 'default' }}
         onMouseEnter={e => {
           onHover({ x: e.clientX + 14, y: e.clientY + 14, content: raw });
+          if (isDriveLine) onHoverWaypointIndex?.(waypointIndex);
         }}
-        onMouseLeave={() => onHover(null)}
+        onMouseLeave={() => {
+          onHover(null);
+          if (isDriveLine) onHoverWaypointIndex?.(null);
+        }}
       >
         <rect
           x={gx} y={gy} width={gw} height={gh}
           rx={5}
-          fill="#1e293b"
-          stroke="#475569"
-          strokeWidth={1.5}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
         />
+
+        {/* Drive indicator dot */}
+        {isDriveLine && (
+          <circle
+            cx={gx + gw - 8} cy={gy + 8} r={4}
+            fill={isWpHovered ? '#22c55e' : '#2d6a45'}
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
 
         {showSub && (
           <text
@@ -120,7 +148,7 @@ function RenderNode({
           dominantBaseline="central"
           fontSize={Math.min(13, Math.max(9, gh / 4.5))}
           fontWeight="600"
-          fill="#e2e8f0"
+          fill={isWpHovered ? '#86efac' : '#e2e8f0'}
           style={{ pointerEvents: 'none' }}
         >
           {truncate(name, maxChars)}
@@ -148,20 +176,17 @@ function RenderNode({
 
   return (
     <g className={`node-${command.type}`}>
-      {/* clipPath so the header strip respects the group's rounded top corners */}
       <defs>
         <clipPath id={clipId}>
           <rect x={gx} y={gy} width={gw} height={gh} rx={6} />
         </clipPath>
       </defs>
 
-      {/* Body: clipped dark fill + solid colored header strip */}
       <g clipPath={`url(#${clipId})`}>
         <rect x={gx} y={gy} width={gw} height={gh} fill={GROUP_BODY_FILL} />
         <rect x={gx} y={gy} width={gw} height={hh} fill={style.headerBg} />
       </g>
 
-      {/* Border — dashed for decorated, solid for everything else */}
       <rect
         x={gx} y={gy} width={gw} height={gh}
         rx={6}
@@ -171,7 +196,6 @@ function RenderNode({
         strokeDasharray={isDecorated ? '6 3' : undefined}
       />
 
-      {/* Header type label */}
       <text
         x={gx + gw / 2} y={gy + hh / 2}
         textAnchor="middle"
@@ -185,7 +209,6 @@ function RenderNode({
         {headerLabel}
       </text>
 
-      {/* Deadline child indicator in header */}
       {isDeadlineChild && (
         <text
           x={gx + gw - 8} y={gy + hh / 2}
@@ -197,7 +220,6 @@ function RenderNode({
         >⏱</text>
       )}
 
-      {/* Deadline divider between deadline child and the others */}
       {command.type === 'deadline' && children.length > 1 && (() => {
         const c0 = children[0];
         const divY = (c0.y + c0.height) * zoom + 3;
@@ -212,7 +234,6 @@ function RenderNode({
         );
       })()}
 
-      {/* Children */}
       {children.map((child, i) => (
         <RenderNode
           key={child.command.id}
@@ -222,7 +243,6 @@ function RenderNode({
         />
       ))}
 
-      {/* TRUE / FALSE labels for conditional branches — rendered after children so they appear on top */}
       {command.type === 'conditional' && children.map((child, i) => (
         <text
           key={`cond-${i}`}
@@ -243,7 +263,7 @@ function RenderNode({
 
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
-function Legend() {
+export function Legend() {
   const items = [
     { label: 'Sequence', style: TYPE_STYLE.sequence    },
     { label: 'Parallel', style: TYPE_STYLE.parallel    },
@@ -266,20 +286,41 @@ function Legend() {
         <span style={{ fontSize: 14, lineHeight: 1 }}>⏱</span>
         <span>Deadline</span>
       </div>
+      <div className="legend-item">
+        <svg width="18" height="14" style={{ flexShrink: 0 }}>
+          <rect x={1} y={1} width={16} height={12} rx={2} fill="#1e293b" stroke="#2d6a45" strokeWidth={1.5} />
+          <circle cx={13} cy={4} r={3} fill="#2d6a45" />
+        </svg>
+        <span>Drive</span>
+      </div>
     </div>
   );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-interface Props { command: CommandFunction | null }
+interface Props {
+  command: CommandFunction | null;
+  /** Zoom level — controlled by Viewer (defaults to 1.0 if used standalone) */
+  zoom?: number;
+  setZoom?: React.Dispatch<React.SetStateAction<number>>;
+  /** Drive waypoints for cross-highlighting with the field view */
+  waypoints?: DriveWaypoint[];
+  hoveredWaypointIndex?: number | null;
+  onHoverWaypointIndex?: (i: number | null) => void;
+}
 
-export function TimelineView({ command }: Props) {
-  const [zoom, setZoom]     = useState(1.0);
+export function TimelineView({ command, zoom = 1.0, setZoom = () => {}, waypoints, hoveredWaypointIndex, onHoverWaypointIndex }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
 
   const handleHover = useCallback((t: TooltipState | null) => setTooltip(t), []);
+
+  // Build nodeId → waypoint index map for cross-highlighting
+  const driveNodeMap = useMemo(() => {
+    const map = new Map<string, number>();
+    waypoints?.forEach((wp, i) => map.set(wp.nodeId, i));
+    return map;
+  }, [waypoints]);
 
   if (!command) {
     return (
@@ -294,31 +335,25 @@ export function TimelineView({ command }: Props) {
   const PAD    = 16;
   const svgW   = layout.width  * zoom + PAD * 2;
   const svgH   = layout.height * zoom + PAD * 2;
-  const ctx: RenderCtx = { zoom, onHover: handleHover };
+  const ctx: RenderCtx = {
+    zoom,
+    onHover: handleHover,
+    driveNodeMap,
+    hoveredWaypointIndex: hoveredWaypointIndex ?? null,
+    onHoverWaypointIndex,
+  };
 
   return (
-    <div className="timeline-view">
-      <div className="timeline-toolbar">
-        <div className="timeline-title">
-          <span className="timeline-cmd-name">{command.name}</span>
-          {command.fullName !== command.name && (
-            <span className="timeline-cmd-full">{command.fullName}</span>
-          )}
-        </div>
-        <div className="toolbar-controls">
-          <Legend />
-          <div className="zoom-controls">
-            <button className="zoom-btn" onClick={() => setZoom(z => Math.max(0.3, z - 0.15))} title="Zoom out">−</button>
-            <span className="zoom-label">{Math.round(zoom * 100)}%</span>
-            <button className="zoom-btn" onClick={() => setZoom(z => Math.min(3, z + 0.15))} title="Zoom in">+</button>
-            <button className="zoom-btn" onClick={() => setZoom(1)} title="Reset zoom">↺</button>
-          </div>
-        </div>
+    <div className="timeline-view" style={{ position: 'relative' }}>
+      {/* Floating zoom controls */}
+      <div className="zoom-float">
+        <button className="zoom-btn" onClick={() => setZoom(z => Math.min(3, z + 0.15))} title="Zoom in">+</button>
+        <button className="zoom-btn" onClick={() => setZoom(z => Math.max(0.3, z - 0.15))} title="Zoom out">−</button>
+        <button className="zoom-btn" onClick={() => setZoom(1)} title="Reset zoom">↺</button>
       </div>
 
       <div className="timeline-scroll">
         <svg
-          ref={svgRef}
           width={svgW}
           height={svgH}
           style={{ display: 'block', minWidth: svgW }}

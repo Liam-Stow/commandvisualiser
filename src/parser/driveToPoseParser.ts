@@ -17,6 +17,8 @@ export interface DriveWaypoint {
   rotTolDeg: number;
   flipForRed: boolean;
   raw: string;
+  /** id of the LeafNode this waypoint came from — used for cross-highlighting */
+  nodeId: string;
 }
 
 // ─── Unit parsing ─────────────────────────────────────────────────────────────
@@ -109,7 +111,7 @@ function parsePoseArg(arg: string): WaypointPose {
 
 // ─── DriveToPose call parser ──────────────────────────────────────────────────
 
-function parseDriveToPose(raw: string): DriveWaypoint | null {
+function parseDriveToPose(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
   const dtpIdx = raw.indexOf('DriveToPose(');
   if (dtpIdx === -1) return null;
 
@@ -126,7 +128,7 @@ function parseDriveToPose(raw: string): DriveWaypoint | null {
   return { command: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw };
 }
 
-function parseDriveOverBump(raw: string): DriveWaypoint | null {
+function parseDriveOverBump(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
   const idx = raw.indexOf('DriveOverBump(');
   if (idx === -1) return null;
 
@@ -154,9 +156,9 @@ export function extractWaypoints(node: AnyCommandNode): DriveWaypoint[] {
   switch (node.type) {
     case 'leaf': {
       const dtp = parseDriveToPose(node.raw);
-      if (dtp) return [dtp];
+      if (dtp) return [{ ...dtp, nodeId: node.id }];
       const dob = parseDriveOverBump(node.raw);
-      if (dob) return [dob];
+      if (dob) return [{ ...dob, nodeId: node.id }];
       return [];
     }
 
