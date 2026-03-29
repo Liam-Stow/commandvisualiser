@@ -618,7 +618,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
         </div>
 
         {/* Floating zoom controls */}
-        <div className="zoom-float">
+        <div className="zoom-float" onMouseDown={e => e.stopPropagation()}>
           <button className="zoom-btn" onClick={() => zoomBy(1.25)} title="Zoom in">+</button>
           <button className="zoom-btn" onClick={() => zoomBy(1 / 1.25)} title="Zoom out">−</button>
           <button className="zoom-btn" onClick={applyFit} title="Fit to screen">⤢</button>
@@ -645,7 +645,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
         {pickedPose && (() => {
           const snippet = `frc::Pose2d{${pickedPose.x.toFixed(3)}_m, ${pickedPose.y.toFixed(3)}_m, ${pickerRotation.toFixed(1)}_deg}`;
           return (
-            <div className="pose-picker-panel">
+            <div className="pose-picker-panel" onMouseDown={e => e.stopPropagation()}>
               <div className="ppp-header">
                 <span>Picked Pose</span>
                 <button className="ppp-close" onClick={() => { setPickedPose(null); setPickerMode(false); }} title="Dismiss">×</button>
