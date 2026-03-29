@@ -385,9 +385,13 @@ interface Props {
   /** Currently highlighted waypoint index — controlled by parent */
   hoveredIndex: number | null;
   onHoverIndex: (i: number | null) => void;
+  /** Field display controls — lifted to the combined header in Viewer */
+  redAlliance: boolean;
+  showTolerance: boolean;
+  showRotation: boolean;
 }
 
-export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHoverIndex }: Props) {
+export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHoverIndex, redAlliance, showTolerance, showRotation }: Props) {
   const cfg = ACTIVE_FIELD;
 
   // ── Zoom / pan ──────────────────────────────────────────────────────────────
@@ -480,10 +484,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   }, []);
 
   // ── State ───────────────────────────────────────────────────────────────────
-  const [redAlliance,   setRedAlliance  ] = useState(false);
-  const [showTolerance, setShowTolerance] = useState(true);
-  const [showRotation,  setShowRotation ] = useState(true);
-  const [rangeStart,    setRangeStart   ] = useState(0);
+  const [rangeStart, setRangeStart] = useState(0);
   const [rangeEnd,      setRangeEnd     ] = useState(0);
 
   // ── Waypoints ───────────────────────────────────────────────────────────────
@@ -518,25 +519,6 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
 
   return (
     <div className="field-view">
-      {/* ── Toolbar ── */}
-      <div className="field-toolbar">
-        <span className="field-name">{cfg.name}</span>
-        <div className="field-controls">
-          <label className="toggle-label">
-            <input type="checkbox" checked={showTolerance} onChange={e => setShowTolerance(e.target.checked)} />
-            Translation Tolerance
-          </label>
-          <label className="toggle-label">
-            <input type="checkbox" checked={showRotation} onChange={e => setShowRotation(e.target.checked)} />
-            Rotation Tolerance
-          </label>
-          <div className="alliance-toggle">
-            <button className={`alliance-btn ${!redAlliance ? 'active-blue' : ''}`} onClick={() => setRedAlliance(false)}>Blue</button>
-            <button className={`alliance-btn ${redAlliance  ? 'active-red'  : ''}`} onClick={() => setRedAlliance(true)}>Red</button>
-          </div>
-        </div>
-      </div>
-
       {/* ── Viewport (zoom/pan) ── */}
       <div
         ref={viewportRef}

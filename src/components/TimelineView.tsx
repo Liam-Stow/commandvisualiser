@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
+// zoom is now a prop; useState kept for tooltip only
 import type { CommandFunction, DecoratedNode } from '../types/command';
 import type { LayoutNode } from '../utils/layout';
 import type { DriveWaypoint } from '../parser/driveToPoseParser';
@@ -262,7 +263,7 @@ function RenderNode({
 
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
-function Legend() {
+export function Legend() {
   const items = [
     { label: 'Sequence', style: TYPE_STYLE.sequence    },
     { label: 'Parallel', style: TYPE_STYLE.parallel    },
@@ -300,14 +301,16 @@ function Legend() {
 
 interface Props {
   command: CommandFunction | null;
+  /** Zoom level — controlled by Viewer */
+  zoom: number;
+  setZoom: React.Dispatch<React.SetStateAction<number>>;
   /** Drive waypoints for cross-highlighting with the field view */
   waypoints?: DriveWaypoint[];
   hoveredWaypointIndex?: number | null;
   onHoverWaypointIndex?: (i: number | null) => void;
 }
 
-export function TimelineView({ command, waypoints, hoveredWaypointIndex, onHoverWaypointIndex }: Props) {
-  const [zoom, setZoom]     = useState(1.0);
+export function TimelineView({ command, zoom, setZoom, waypoints, hoveredWaypointIndex, onHoverWaypointIndex }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -342,23 +345,12 @@ export function TimelineView({ command, waypoints, hoveredWaypointIndex, onHover
   };
 
   return (
-    <div className="timeline-view">
-      <div className="timeline-toolbar">
-        <div className="timeline-title">
-          <span className="timeline-cmd-name">{command.name}</span>
-          {command.fullName !== command.name && (
-            <span className="timeline-cmd-full">{command.fullName}</span>
-          )}
-        </div>
-        <div className="toolbar-controls">
-          <Legend />
-          <div className="zoom-controls">
-            <button className="zoom-btn" onClick={() => setZoom(z => Math.max(0.3, z - 0.15))} title="Zoom out">−</button>
-            <span className="zoom-label">{Math.round(zoom * 100)}%</span>
-            <button className="zoom-btn" onClick={() => setZoom(z => Math.min(3, z + 0.15))} title="Zoom in">+</button>
-            <button className="zoom-btn" onClick={() => setZoom(1)} title="Reset zoom">↺</button>
-          </div>
-        </div>
+    <div className="timeline-view" style={{ position: 'relative' }}>
+      {/* Floating zoom controls */}
+      <div className="zoom-float">
+        <button className="zoom-btn" onClick={() => setZoom(z => Math.min(3, z + 0.15))} title="Zoom in">+</button>
+        <button className="zoom-btn" onClick={() => setZoom(z => Math.max(0.3, z - 0.15))} title="Zoom out">−</button>
+        <button className="zoom-btn" onClick={() => setZoom(1)} title="Reset zoom">↺</button>
       </div>
 
       <div className="timeline-scroll">

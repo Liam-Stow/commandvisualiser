@@ -312,38 +312,64 @@ body {
   flex-shrink: 0;
 }
 
-/* ─── Timeline View ────────────────────────────────────────────────────────── */
+/* ─── Combined viewer header ────────────────────────────────────────────────── */
 
-.timeline-view {
-  background: var(--viewer-bg);
+.viewer-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  background: var(--viewer-bg);
+  min-height: 0;
+}
+
+.vh-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex-shrink: 1;
   overflow: hidden;
 }
 
-.timeline-toolbar {
+.vh-placeholder {
+  opacity: 0.35;
+}
+
+.vh-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border-light);
+  flex-shrink: 0;
+}
+
+.vh-field-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 16px;
-  border-bottom: 1px solid var(--border);
+  gap: 10px;
   flex-shrink: 0;
-  gap: 16px;
   flex-wrap: wrap;
 }
 
-.timeline-title {
+.vh-timeline-controls {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
-  min-width: 0;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .timeline-cmd-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
   font-family: 'Fira Code', 'Cascadia Code', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .timeline-cmd-full {
@@ -355,11 +381,13 @@ body {
   white-space: nowrap;
 }
 
-.toolbar-controls {
+/* ─── Timeline View ────────────────────────────────────────────────────────── */
+
+.timeline-view {
+  background: var(--viewer-bg);
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-shrink: 0;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .zoom-controls {
@@ -538,28 +566,10 @@ code {
   flex: 1;
 }
 
-.field-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 5px 14px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .field-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-dim);
-}
-
-.field-controls {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  color: var(--text-muted);
 }
 
 .toggle-label {
