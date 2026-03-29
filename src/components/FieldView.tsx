@@ -601,6 +601,10 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
       const imgY = (e.clientY - rect.top  - pan.y) / scale;
       const [fx, fy] = imagePxToField(cfg, imgX, imgY);
       setPickedPoseAndRef({ x: fx, y: fy });
+      // Cursor is at the pose — activate rotation mode immediately without
+      // waiting for the next mousemove to trigger the proximity check.
+      nearPickerRef.current = true;
+      setNearPicker(true);
     }
   }, [pickerMode, pan, scale, cfg, setPickedPoseAndRef]);
 
