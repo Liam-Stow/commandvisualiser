@@ -323,6 +323,79 @@ function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale }: PathLinesPro
   return <>{lines}</>;
 }
 
+// ─── Coordinate picker SVG marker ────────────────────────────────────────────
+
+interface PickerMarkerProps {
+  pose: { x: number; y: number };
+  rotation: number;
+  cfg: FieldConfig;
+  scale: number;
+}
+
+function PickerMarker({ pose, rotation, cfg, scale }: PickerMarkerProps) {
+  const [px, py] = fieldToImagePx(cfg, pose.x, pose.y);
+  const arm      = 22 / scale;
+  const R        = 10 / scale;
+  const rotRad   = toRad(rotation);
+  const arrowLen = 32 / scale;
+  const ax = px + arrowLen * Math.cos(rotRad);
+  const ay = py - arrowLen * Math.sin(rotRad);
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      <line x1={px - arm} y1={py} x2={px + arm} y2={py} stroke="#fbbf24" strokeWidth={1.5 / scale} />
+      <line x1={px} y1={py - arm} x2={px} y2={py + arm} stroke="#fbbf24" strokeWidth={1.5 / scale} />
+      <circle cx={px} cy={py} r={R} fill="rgba(251,191,36,0.15)" stroke="#fbbf24" strokeWidth={2 / scale} />
+      <line x1={px} y1={py} x2={ax} y2={ay} stroke="#fbbf24" strokeWidth={2 / scale} />
+      <polygon points={arrowHeadPoints(px, py, ax, ay, 7 / scale)} fill="#fbbf24" />
+    </g>
+  );
+}
+
+// ─── Coordinate picker panel ──────────────────────────────────────────────────
+
+interface PickerPanelProps {
+  pose: { x: number; y: number };
+  rotation: number;
+  onClose: () => void;
+}
+
+function PickerPanel({ pose, rotation, onClose }: PickerPanelProps) {
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const snippet = `frc::Pose2d{${pose.x.toFixed(3)}_m, ${pose.y.toFixed(3)}_m, ${rotation.toFixed(1)}_deg}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(snippet);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    setCopied(true);
+    copyTimer.current = setTimeout(() => setCopied(false), 1500);
+  };
+
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+
+  return (
+    <div className="pose-picker-panel" onMouseDown={e => e.stopPropagation()}>
+      <div className="ppp-header">
+        <span>Picked Pose</span>
+        <button className="ppp-close" onClick={onClose} title="Dismiss">×</button>
+      </div>
+      <div className="ppp-alliance-note">Blue alliance origin</div>
+      <table className="fwt-table">
+        <tbody>
+          <tr><td>X</td><td>{pose.x.toFixed(3)} m</td></tr>
+          <tr><td>Y</td><td>{pose.y.toFixed(3)} m</td></tr>
+          <tr><td>θ</td><td>{rotation.toFixed(1)}°</td></tr>
+        </tbody>
+      </table>
+      <div className="ppp-snippet">{snippet}</div>
+      <button className={`ppp-copy${copied ? ' ppp-copied' : ''}`} onClick={handleCopy}>
+        {copied ? '✓ Copied!' : 'Copy'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Waypoint tooltip ─────────────────────────────────────────────────────────
 
 function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number }) {
@@ -387,10 +460,9 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   const [fieldHoveredIndex, setFieldHoveredIndex] = useState<number | null>(null);
 
   // ── Coordinate picker ────────────────────────────────────────────────────────
-  const [pickerMode,    setPickerMode   ] = useState(false);
-  const [pickedPose,    setPickedPose   ] = useState<{ x: number; y: number } | null>(null);
+  const [pickerMode,     setPickerMode    ] = useState(false);
+  const [pickedPose,     setPickedPose    ] = useState<{ x: number; y: number } | null>(null);
   const [pickerRotation, setPickerRotation] = useState(0);
-  const [copied,        setCopied       ] = useState(false);
 
   const applyFit = useCallback(() => {
     const f = fitRef.current;
@@ -463,9 +535,9 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   }, [fieldHoveredIndex]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
-    // Require that a mousedown on the viewport started this sequence — if mousedown
-    // was stopped by an overlay (zoom buttons, picker panel), isDragging stays false
-    // and we must not treat this mouseup as a field click.
+    // A pick requires two conditions: (1) isDragging must be true, meaning a
+    // mousedown reached the viewport handler (overlays call stopPropagation on
+    // mousedown to prevent this); (2) the pointer must not have moved (no drag).
     const wasClick = isDragging.current && !hasMoved.current;
     isDragging.current = false;
     if (!pickerMode) (e.currentTarget as HTMLElement).style.cursor = 'grab';
@@ -599,24 +671,9 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
             ))}
 
             {/* Coordinate picker marker */}
-            {pickedPose && (() => {
-              const [px, py] = fieldToImagePx(cfg, pickedPose.x, pickedPose.y);
-              const arm = 22 / scale;
-              const R   = 10 / scale;
-              const rotRad  = toRad(pickerRotation);
-              const arrowLen = 32 / scale;
-              const ax = px + arrowLen * Math.cos(rotRad);
-              const ay = py - arrowLen * Math.sin(rotRad);
-              return (
-                <g style={{ pointerEvents: 'none' }}>
-                  <line x1={px - arm} y1={py} x2={px + arm} y2={py} stroke="#fbbf24" strokeWidth={1.5 / scale} />
-                  <line x1={px} y1={py - arm} x2={px} y2={py + arm} stroke="#fbbf24" strokeWidth={1.5 / scale} />
-                  <circle cx={px} cy={py} r={R} fill="rgba(251,191,36,0.15)" stroke="#fbbf24" strokeWidth={2 / scale} />
-                  <line x1={px} y1={py} x2={ax} y2={ay} stroke="#fbbf24" strokeWidth={2 / scale} />
-                  <polygon points={arrowHeadPoints(px, py, ax, ay, 7 / scale)} fill="#fbbf24" />
-                </g>
-              );
-            })()}
+            {pickedPose && (
+              <PickerMarker pose={pickedPose} rotation={pickerRotation} cfg={cfg} scale={scale} />
+            )}
           </svg>
         </div>
 
@@ -645,39 +702,13 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
         )}
 
         {/* Coordinate picker panel */}
-        {pickedPose && (() => {
-          const snippet = `frc::Pose2d{${pickedPose.x.toFixed(3)}_m, ${pickedPose.y.toFixed(3)}_m, ${pickerRotation.toFixed(1)}_deg}`;
-          return (
-            <div className="pose-picker-panel" onMouseDown={e => e.stopPropagation()}>
-              <div className="ppp-header">
-                <span>Picked Pose</span>
-                <button className="ppp-close" onClick={() => { setPickedPose(null); setPickerMode(false); }} title="Dismiss">×</button>
-              </div>
-              <div className="ppp-alliance-note">Blue alliance origin</div>
-              <table className="fwt-table">
-                <tbody>
-                  <tr><td>X</td><td>{pickedPose.x.toFixed(3)} m</td></tr>
-                  <tr><td>Y</td><td>{pickedPose.y.toFixed(3)} m</td></tr>
-                  <tr>
-                    <td>θ</td>
-                    <td>{pickerRotation.toFixed(1)}°</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="ppp-snippet">{snippet}</div>
-              <button
-                className={`ppp-copy${copied ? ' ppp-copied' : ''}`}
-                onClick={() => {
-                  navigator.clipboard.writeText(snippet);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                }}
-              >
-                {copied ? '✓ Copied!' : 'Copy'}
-              </button>
-            </div>
-          );
-        })()}
+        {pickedPose && (
+          <PickerPanel
+            pose={pickedPose}
+            rotation={pickerRotation}
+            onClose={() => { setPickedPose(null); setPickerMode(false); }}
+          />
+        )}
       </div>
 
       {/* ── Path range slider ── */}
