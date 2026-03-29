@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import type { CommandFunction } from '../types/command';
 import type { DriveWaypoint } from '../parser/driveToPoseParser';
 import { extractWaypoints } from '../parser/driveToPoseParser';
-import { ACTIVE_FIELD } from '../config/fields';
 import { TimelineView, Legend } from './TimelineView';
 import { FieldView } from './FieldView';
 
@@ -11,8 +10,6 @@ import { FieldView } from './FieldView';
 interface HeaderProps {
   command: CommandFunction | null;
   hasWaypoints: boolean;
-  zoom: number;
-  setZoom: React.Dispatch<React.SetStateAction<number>>;
   redAlliance: boolean;
   setRedAlliance: (v: boolean) => void;
   showTolerance: boolean;
@@ -23,7 +20,6 @@ interface HeaderProps {
 
 function ViewerHeader({
   command, hasWaypoints,
-  zoom, setZoom,
   redAlliance, setRedAlliance,
   showTolerance, setShowTolerance,
   showRotation, setShowRotation,
@@ -122,7 +118,6 @@ export function Viewer({ command }: Props) {
     <ViewerHeader
       command={command}
       hasWaypoints={hasWaypoints}
-      zoom={zoom} setZoom={setZoom}
       redAlliance={redAlliance} setRedAlliance={setRedAlliance}
       showTolerance={showTolerance} setShowTolerance={setShowTolerance}
       showRotation={showRotation} setShowRotation={setShowRotation}

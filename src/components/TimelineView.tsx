@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 // zoom is now a prop; useState kept for tooltip only
 import type { CommandFunction, DecoratedNode } from '../types/command';
 import type { LayoutNode } from '../utils/layout';
@@ -312,7 +312,6 @@ interface Props {
 
 export function TimelineView({ command, zoom, setZoom, waypoints, hoveredWaypointIndex, onHoverWaypointIndex }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
 
   const handleHover = useCallback((t: TooltipState | null) => setTooltip(t), []);
 
@@ -355,7 +354,6 @@ export function TimelineView({ command, zoom, setZoom, waypoints, hoveredWaypoin
 
       <div className="timeline-scroll">
         <svg
-          ref={svgRef}
           width={svgW}
           height={svgH}
           style={{ display: 'block', minWidth: svgW }}
