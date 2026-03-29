@@ -418,7 +418,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   }, [cfg]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPickerMode(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPickerMode(false); setPickedPose(null); } };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
@@ -628,7 +628,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
           <div className="zoom-divider" />
           <button
             className={`zoom-btn${pickerMode ? ' picker-active' : ''}`}
-            onClick={() => setPickerMode(m => !m)}
+            onClick={() => { setPickerMode(m => { if (m) setPickedPose(null); return !m; }); }}
             title={pickerMode ? 'Exit coordinate picker (Esc)' : 'Pick a field coordinate'}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
