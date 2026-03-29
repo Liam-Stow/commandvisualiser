@@ -5,6 +5,7 @@ import {
   ACTIVE_FIELD,
   type FieldConfig,
   fieldToImagePx,
+  imagePxToField,
   flipXForRed,
   flipRotForRed,
 } from '../config/fields';
@@ -322,6 +323,97 @@ function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale }: PathLinesPro
   return <>{lines}</>;
 }
 
+// ─── Coordinate picker SVG marker ────────────────────────────────────────────
+
+// Pixel radius (in screen space) within which scroll rotates instead of zooming.
+const PICKER_ROTATE_RADIUS_PX = 50;
+
+interface PickerMarkerProps {
+  pose: { x: number; y: number };
+  rotation: number;
+  cfg: FieldConfig;
+  scale: number;
+  nearCursor: boolean;
+}
+
+function PickerMarker({ pose, rotation, cfg, scale, nearCursor }: PickerMarkerProps) {
+  const [px, py] = fieldToImagePx(cfg, pose.x, pose.y);
+  const arm      = 22 / scale;
+  const R        = 10 / scale;
+  const rotRad   = toRad(rotation);
+  const arrowLen = 32 / scale;
+  const ax = px + arrowLen * Math.cos(rotRad);
+  const ay = py - arrowLen * Math.sin(rotRad);
+  // Dashed hover ring shows the scroll-to-rotate activation radius.
+  const hoverR = PICKER_ROTATE_RADIUS_PX / scale;
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      {nearCursor && (
+        <circle
+          cx={px} cy={py} r={hoverR}
+          fill="none"
+          stroke="#fbbf24"
+          strokeWidth={1 / scale}
+          strokeDasharray={`${5 / scale} ${4 / scale}`}
+          opacity={0.45}
+        />
+      )}
+      <line x1={px - arm} y1={py} x2={px + arm} y2={py} stroke="#fbbf24" strokeWidth={1.5 / scale} />
+      <line x1={px} y1={py - arm} x2={px} y2={py + arm} stroke="#fbbf24" strokeWidth={1.5 / scale} />
+      <circle cx={px} cy={py} r={R} fill="rgba(251,191,36,0.15)" stroke="#fbbf24" strokeWidth={2 / scale} />
+      {/* Arrow brightens when cursor is near to hint at scroll-to-rotate */}
+      <line x1={px} y1={py} x2={ax} y2={ay} stroke={nearCursor ? '#fff' : '#fbbf24'} strokeWidth={(nearCursor ? 2.5 : 2) / scale} />
+      <polygon points={arrowHeadPoints(px, py, ax, ay, 7 / scale)} fill={nearCursor ? '#fff' : '#fbbf24'} />
+    </g>
+  );
+}
+
+// ─── Coordinate picker panel ──────────────────────────────────────────────────
+
+interface PickerPanelProps {
+  pose: { x: number; y: number };
+  rotation: number;
+  onClose: () => void;
+}
+
+function PickerPanel({ pose, rotation, onClose }: PickerPanelProps) {
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const snippet = `frc::Pose2d{${pose.x.toFixed(3)}_m, ${pose.y.toFixed(3)}_m, ${rotation.toFixed(1)}_deg}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(snippet).then(() => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      setCopied(true);
+      copyTimer.current = setTimeout(() => setCopied(false), 1500);
+    }).catch(() => { /* permission denied or doc not focused — leave button unchanged */ });
+  };
+
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+
+  return (
+    <div className="pose-picker-panel" onMouseDown={e => e.stopPropagation()}>
+      <div className="ppp-header">
+        <span>Picked Pose</span>
+        <button className="ppp-close" onClick={onClose} title="Dismiss">×</button>
+      </div>
+      <div className="ppp-alliance-note">Blue alliance origin</div>
+      <table className="fwt-table">
+        <tbody>
+          <tr><td>X</td><td>{pose.x.toFixed(3)} m</td></tr>
+          <tr><td>Y</td><td>{pose.y.toFixed(3)} m</td></tr>
+          <tr><td>θ</td><td>{rotation.toFixed(1)}°</td></tr>
+        </tbody>
+      </table>
+      <div className="ppp-snippet">{snippet}</div>
+      <button className={`ppp-copy${copied ? ' ppp-copied' : ''}`} onClick={handleCopy}>
+        {copied ? '✓ Copied!' : 'Copy'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Waypoint tooltip ─────────────────────────────────────────────────────────
 
 function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number }) {
@@ -377,13 +469,35 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   const hasMoved       = useRef(false);
   const dragOrigin     = useRef({ mx: 0, my: 0, px: 0, py: 0 });
   const fitRef         = useRef({ scale: 0.2, x: 0, y: 0 });
+  // Always-current transform so wheel/mousemove handlers don't capture stale values.
+  const transformRef   = useRef({ scale: 0.2, panX: 0, panY: 0 });
+  // Whether cursor is within PICKER_ROTATE_RADIUS_PX of the picked pose (screen px).
+  const nearPickerRef  = useRef(false);
 
   const [scale, setScale] = useState(0.2);
   const [pan,   setPan  ] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [nearPicker, setNearPicker] = useState(false);
   // Tracks hover that originated inside the field viewport (for tooltip placement).
   // Distinct from the external hoveredIndex prop, which can also be set by the timeline.
   const [fieldHoveredIndex, setFieldHoveredIndex] = useState<number | null>(null);
+
+  // ── Coordinate picker ────────────────────────────────────────────────────────
+  const [pickerMode,     setPickerMode    ] = useState(false);
+  const [pickedPose,     setPickedPose    ] = useState<{ x: number; y: number } | null>(null);
+  const [pickerRotation, setPickerRotation] = useState(0);
+  // Ref mirrors pickedPose so handleMouseMove can read it without a stale closure.
+  const pickedPoseRef = useRef<{ x: number; y: number } | null>(null);
+
+  const setPickedPoseAndRef = useCallback((pose: { x: number; y: number } | null) => {
+    pickedPoseRef.current = pose;
+    setPickedPose(pose);
+    if (!pose) { nearPickerRef.current = false; setNearPicker(false); }
+  }, []);
+
+  // Keep transformRef current so wheel/mousemove can read scale+pan without
+  // capturing them in closure deps (would cause stale values during fast scroll).
+  useEffect(() => { transformRef.current = { scale, panX: pan.x, panY: pan.y }; }, [scale, pan]);
 
   const applyFit = useCallback(() => {
     const f = fitRef.current;
@@ -410,25 +524,37 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
     return () => ro.disconnect();
   }, [cfg]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPickerMode(false); setPickedPoseAndRef(null); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    const delta  = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-    const fitS   = fitRef.current.scale;
-    const newS   = Math.min(Math.max(scale * delta, fitS * MIN_SCALE_FACTOR), fitS * MAX_SCALE_FACTOR);
-    const rect   = viewportRef.current!.getBoundingClientRect();
-    const cx     = e.clientX - rect.left;
-    const cy     = e.clientY - rect.top;
+    if (nearPickerRef.current) {
+      // Scroll rotates the picked pose (5° per tick; scroll-up = CCW)
+      setPickerRotation(r => r + (e.deltaY < 0 ? 5 : -5));
+      return;
+    }
+    const { scale: s, panX, panY } = transformRef.current;
+    const delta = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const fitS  = fitRef.current.scale;
+    const newS  = Math.min(Math.max(s * delta, fitS * MIN_SCALE_FACTOR), fitS * MAX_SCALE_FACTOR);
+    const rect  = viewportRef.current!.getBoundingClientRect();
+    const cx    = e.clientX - rect.left;
+    const cy    = e.clientY - rect.top;
     setScale(newS);
-    setPan({ x: cx - (cx - pan.x) * (newS / scale), y: cy - (cy - pan.y) * (newS / scale) });
-  }, [scale, pan]);
+    setPan({ x: cx - (cx - panX) * (newS / s), y: cy - (cy - panY) * (newS / s) });
+  }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
     isDragging.current = true;
     hasMoved.current   = false;
     dragOrigin.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
-    (e.currentTarget as HTMLElement).style.cursor = 'grabbing';
-  }, [pan]);
+    if (!pickerMode) (e.currentTarget as HTMLElement).style.cursor = 'grabbing';
+  }, [pan, pickerMode]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     // Only update tooltip position when a tooltip is actually visible — avoids
@@ -436,18 +562,47 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
     if (fieldHoveredIndex !== null) {
       setMousePos({ x: e.clientX + 16, y: e.clientY + 8 });
     }
+
+    // Proximity check for scroll-to-rotate: convert picked pose to screen space
+    // using the always-current transformRef so we don't need scale/pan in deps.
+    if (pickedPoseRef.current && viewportRef.current) {
+      const { scale: s, panX, panY } = transformRef.current;
+      const rect = viewportRef.current.getBoundingClientRect();
+      const [imgX, imgY] = fieldToImagePx(cfg, pickedPoseRef.current.x, pickedPoseRef.current.y);
+      const screenX = imgX * s + panX + rect.left;
+      const screenY = imgY * s + panY + rect.top;
+      const dx = e.clientX - screenX, dy = e.clientY - screenY;
+      const near = Math.sqrt(dx * dx + dy * dy) < PICKER_ROTATE_RADIUS_PX;
+      if (near !== nearPickerRef.current) {
+        nearPickerRef.current = near;
+        setNearPicker(near);
+      }
+    }
+
     if (!isDragging.current) return;
     hasMoved.current = true;
     setPan({
       x: dragOrigin.current.px + e.clientX - dragOrigin.current.mx,
       y: dragOrigin.current.py + e.clientY - dragOrigin.current.my,
     });
-  }, [fieldHoveredIndex]);
+  }, [fieldHoveredIndex, cfg]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    // A pick requires two conditions: (1) isDragging must be true, meaning a
+    // mousedown reached the viewport handler (overlays call stopPropagation on
+    // mousedown to prevent this); (2) the pointer must not have moved (no drag).
+    const wasClick = isDragging.current && !hasMoved.current;
     isDragging.current = false;
-    (e.currentTarget as HTMLElement).style.cursor = 'grab';
-  }, []);
+    if (!pickerMode) (e.currentTarget as HTMLElement).style.cursor = 'grab';
+
+    if (wasClick && pickerMode && viewportRef.current) {
+      const rect = viewportRef.current.getBoundingClientRect();
+      const imgX = (e.clientX - rect.left - pan.x) / scale;
+      const imgY = (e.clientY - rect.top  - pan.y) / scale;
+      const [fx, fy] = imagePxToField(cfg, imgX, imgY);
+      setPickedPoseAndRef({ x: fx, y: fy });
+    }
+  }, [pickerMode, pan, scale, cfg, setPickedPoseAndRef]);
 
   const handleViewportMouseLeave = useCallback((e: React.MouseEvent) => {
     handleMouseUp(e);
@@ -525,7 +680,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleViewportMouseLeave}
-        style={{ cursor: 'grab' }}
+        style={{ cursor: pickerMode ? 'crosshair' : 'grab' }}
       >
         <div
           style={{
@@ -567,19 +722,45 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
                 onHover={handleWaypointHover}
               />
             ))}
+
+            {/* Coordinate picker marker */}
+            {pickedPose && (
+              <PickerMarker pose={pickedPose} rotation={pickerRotation} cfg={cfg} scale={scale} nearCursor={nearPicker} />
+            )}
           </svg>
         </div>
 
         {/* Floating zoom controls */}
-        <div className="zoom-float">
+        <div className="zoom-float" onMouseDown={e => e.stopPropagation()}>
           <button className="zoom-btn" onClick={() => zoomBy(1.25)} title="Zoom in">+</button>
           <button className="zoom-btn" onClick={() => zoomBy(1 / 1.25)} title="Zoom out">−</button>
           <button className="zoom-btn" onClick={applyFit} title="Fit to screen">⤢</button>
+          <div className="zoom-divider" />
+          <button
+            className={`zoom-btn${pickerMode ? ' picker-active' : ''}`}
+            onClick={() => { setPickerMode(m => { if (m) setPickedPoseAndRef(null); return !m; }); }}
+            title={pickerMode ? 'Exit coordinate picker (Esc)' : 'Pick a field coordinate'}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" strokeWidth="1.5"/>
+              <line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" strokeWidth="1.5"/>
+              <circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
+            </svg>
+          </button>
         </div>
 
         {/* Waypoint tooltip */}
         {hoveredWp && (
           <WaypointTooltip wp={hoveredWp} x={mousePos.x} y={mousePos.y} />
+        )}
+
+        {/* Coordinate picker panel */}
+        {pickedPose && (
+          <PickerPanel
+            pose={pickedPose}
+            rotation={pickerRotation}
+            onClose={() => { setPickedPoseAndRef(null); setPickerMode(false); }}
+          />
         )}
       </div>
 
