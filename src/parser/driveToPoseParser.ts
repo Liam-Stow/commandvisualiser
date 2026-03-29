@@ -111,7 +111,7 @@ function parsePoseArg(arg: string): WaypointPose {
 
 // ─── DriveToPose call parser ──────────────────────────────────────────────────
 
-function parseDriveToPose(raw: string): DriveWaypoint | null {
+function parseDriveToPose(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
   const dtpIdx = raw.indexOf('DriveToPose(');
   if (dtpIdx === -1) return null;
 
@@ -125,10 +125,10 @@ function parseDriveToPose(raw: string): DriveWaypoint | null {
   const rotTolDeg    = args[3] ? parseDeg(args[3])    : 2.0;
   const flipForRed   = args[4] ? args[4].trim() !== 'false' : true;
 
-  return { command: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw, nodeId: '' };
+  return { command: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw };
 }
 
-function parseDriveOverBump(raw: string): DriveWaypoint | null {
+function parseDriveOverBump(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
   const idx = raw.indexOf('DriveOverBump(');
   if (idx === -1) return null;
 
@@ -147,7 +147,7 @@ function parseDriveOverBump(raw: string): DriveWaypoint | null {
     }
   }
 
-  return { command: 'DriveOverBump', pose, speedScaling: 1, posTolMeters: 0.05, rotTolDeg: 5, flipForRed: true, raw, nodeId: '' };
+  return { command: 'DriveOverBump', pose, speedScaling: 1, posTolMeters: 0.05, rotTolDeg: 5, flipForRed: true, raw };
 }
 
 // ─── Tree walker ──────────────────────────────────────────────────────────────

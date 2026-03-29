@@ -322,28 +322,6 @@ function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale }: PathLinesPro
   return <>{lines}</>;
 }
 
-// ─── Named pose list ──────────────────────────────────────────────────────────
-
-function NamedPoseList({ waypoints }: { waypoints: DriveWaypoint[] }) {
-  const named = waypoints.filter(wp => wp.pose.kind === 'named');
-  if (named.length === 0) return null;
-  return (
-    <div className="named-pose-table">
-      <div className="named-pose-header">Named poses — resolve from FieldConstants to plot on field</div>
-      {named.map((wp, i) => (
-        <div key={i} className="named-pose-row">
-          <span className="named-pose-badge" style={{ color: speedColor(wp.speedScaling) }}>
-            {(wp.pose as { kind: 'named'; name: string }).name}
-          </span>
-          <span className="named-pose-meta">
-            {Math.round(wp.speedScaling * 100)}% · ±{(wp.posTolMeters * 100).toFixed(0)} cm · ±{wp.rotTolDeg.toFixed(0)}°
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ─── Waypoint tooltip ─────────────────────────────────────────────────────────
 
 function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number }) {
@@ -403,6 +381,9 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   const [scale, setScale] = useState(0.2);
   const [pan,   setPan  ] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // Tracks hover that originated inside the field viewport (for tooltip placement).
+  // Distinct from the external hoveredIndex prop, which can also be set by the timeline.
+  const [fieldHoveredIndex, setFieldHoveredIndex] = useState<number | null>(null);
 
   const applyFit = useCallback(() => {
     const f = fitRef.current;
@@ -450,19 +431,31 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   }, [pan]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX + 16, y: e.clientY + 8 });
+    // Only update tooltip position when a tooltip is actually visible — avoids
+    // a re-render on every pixel of cursor movement when nothing is hovered.
+    if (fieldHoveredIndex !== null) {
+      setMousePos({ x: e.clientX + 16, y: e.clientY + 8 });
+    }
     if (!isDragging.current) return;
     hasMoved.current = true;
     setPan({
       x: dragOrigin.current.px + e.clientX - dragOrigin.current.mx,
       y: dragOrigin.current.py + e.clientY - dragOrigin.current.my,
     });
-  }, []);
+  }, [fieldHoveredIndex]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     isDragging.current = false;
     (e.currentTarget as HTMLElement).style.cursor = 'grab';
   }, []);
+
+  const handleViewportMouseLeave = useCallback((e: React.MouseEvent) => {
+    handleMouseUp(e);
+    // Clear any stuck tooltip in case the cursor exited without the waypoint
+    // circle's onMouseLeave firing (can happen on fast cursor movement / Safari).
+    setFieldHoveredIndex(null);
+    onHoverIndex(null);
+  }, [handleMouseUp, onHoverIndex]);
 
   // Stable callback: suppress hover only while actively dragging, not after.
   // Also tracks fieldHoveredIndex so the tooltip only shows when the mouse is
@@ -487,10 +480,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
     });
   }, []);
 
-  // ── State ───────────────────────────────────────────────────────────────────
-  // Tracks hover that originated inside the field viewport (for tooltip placement).
-  // Distinct from the external hoveredIndex prop, which can also be set by the timeline.
-  const [fieldHoveredIndex, setFieldHoveredIndex] = useState<number | null>(null);
+  // ── Slider state ────────────────────────────────────────────────────────────
   const [rangeStart, setRangeStart] = useState(0);
   const [rangeEnd,   setRangeEnd  ] = useState(0);
 
@@ -534,7 +524,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={handleViewportMouseLeave}
         style={{ cursor: 'grab' }}
       >
         <div

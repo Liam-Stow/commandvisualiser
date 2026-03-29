@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { CommandFunction } from '../types/command';
 import type { DriveWaypoint } from '../parser/driveToPoseParser';
 import { extractWaypoints } from '../parser/driveToPoseParser';
@@ -78,6 +78,8 @@ interface Props {
 export function Viewer({ command }: Props) {
   const [hoveredWaypointIndex, setHoveredWaypointIndex] = useState<number | null>(null);
   const [fieldHeight, setFieldHeight] = useState(() => Math.round(window.innerHeight / 2));
+  const fieldHeightRef = useRef(fieldHeight);
+  useEffect(() => { fieldHeightRef.current = fieldHeight; }, [fieldHeight]);
 
   // Lifted from FieldView
   const [redAlliance,   setRedAlliance  ] = useState(false);
@@ -97,12 +99,13 @@ export function Viewer({ command }: Props) {
   const startVerticalResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const startY = e.clientY;
-    const startH = fieldHeight;
+    const startH = fieldHeightRef.current;
     document.body.style.cursor     = 'row-resize';
     document.body.style.userSelect = 'none';
 
     const onMove = (ev: MouseEvent) => {
-      setFieldHeight(Math.max(150, Math.min(600, startH + ev.clientY - startY)));
+      const maxH = Math.round(window.innerHeight * 0.75);
+      setFieldHeight(Math.max(150, Math.min(maxH, startH + ev.clientY - startY)));
     };
     const onUp = () => {
       document.body.style.cursor     = '';
@@ -112,7 +115,7 @@ export function Viewer({ command }: Props) {
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup',   onUp);
-  }, [fieldHeight]);
+  }, []);
 
   const header = (
     <ViewerHeader
