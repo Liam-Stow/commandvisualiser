@@ -73,3 +73,18 @@ export function flipXForRed(cfg: FieldConfig, fx: number): number {
 export function flipRotForRed(rot: number): number {
   return 180 - rot;
 }
+
+/**
+ * Convert image pixel coordinates back to field coordinates (metres).
+ * Inverse of fieldToImagePx.
+ */
+export function imagePxToField(
+  cfg: FieldConfig,
+  imgX: number,
+  imgY: number,
+): [number, number] {
+  const marginPx = cfg.marginMeters * cfg.pixelsPerMeter;
+  const fx = (imgX - marginPx) / cfg.pixelsPerMeter;
+  const fy = (cfg.imageHeightPx - marginPx - imgY) / cfg.pixelsPerMeter;
+  return [fx, fy];
+}

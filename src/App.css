@@ -648,6 +648,109 @@ code {
 
 .zoom-float .zoom-btn:hover { background: rgba(201, 74, 28, 0.35); color: var(--text); }
 
+.zoom-float .zoom-btn.picker-active {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.6);
+}
+
+.zoom-float .zoom-btn.picker-active:hover {
+  background: rgba(251, 191, 36, 0.35);
+}
+
+.zoom-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 2px 0;
+}
+
+/* ── Coordinate picker panel ── */
+
+.pose-picker-panel {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 20;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(251, 191, 36, 0.6);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 210px;
+  backdrop-filter: blur(4px);
+}
+
+.ppp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 8px;
+}
+
+.ppp-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.ppp-close:hover { color: var(--text); }
+
+.ppp-rot-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  width: 56px;
+  padding: 1px 4px;
+  margin-right: 2px;
+}
+
+.ppp-rot-input:focus {
+  outline: none;
+  border-color: #fbbf24;
+}
+
+.ppp-snippet {
+  margin-top: 8px;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(0,0,0,0.35);
+  border-radius: 4px;
+  padding: 6px 8px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.ppp-copy {
+  margin-top: 8px;
+  width: 100%;
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 4px;
+  color: #fbbf24;
+  font-size: 12px;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ppp-copy:hover { background: rgba(251,191,36,0.22); }
+
+.ppp-copy.ppp-copied {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.4);
+  color: #4ade80;
+}
+
 /* ── Path range slider ── */
 
 .field-slider-section {
