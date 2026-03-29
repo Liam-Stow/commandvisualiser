@@ -366,10 +366,11 @@ function PickerPanel({ pose, rotation, onClose }: PickerPanelProps) {
   const snippet = `frc::Pose2d{${pose.x.toFixed(3)}_m, ${pose.y.toFixed(3)}_m, ${rotation.toFixed(1)}_deg}`;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(snippet);
-    if (copyTimer.current) clearTimeout(copyTimer.current);
-    setCopied(true);
-    copyTimer.current = setTimeout(() => setCopied(false), 1500);
+    navigator.clipboard.writeText(snippet).then(() => {
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      setCopied(true);
+      copyTimer.current = setTimeout(() => setCopied(false), 1500);
+    }).catch(() => { /* permission denied or doc not focused — leave button unchanged */ });
   };
 
   useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
