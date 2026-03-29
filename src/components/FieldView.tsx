@@ -657,15 +657,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
                   <tr><td>Y</td><td>{pickedPose.y.toFixed(3)} m</td></tr>
                   <tr>
                     <td>θ</td>
-                    <td>
-                      <input
-                        type="number"
-                        className="ppp-rot-input"
-                        value={pickerRotation}
-                        step={5}
-                        onChange={e => setPickerRotation(+e.target.value)}
-                      />°
-                    </td>
+                    <td>{pickerRotation.toFixed(1)}°</td>
                   </tr>
                 </tbody>
               </table>

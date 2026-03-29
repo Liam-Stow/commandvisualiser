@@ -701,23 +701,6 @@ code {
 
 .ppp-close:hover { color: var(--text); }
 
-.ppp-rot-input {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  color: var(--text);
-  font-family: 'Fira Code', monospace;
-  font-size: 12px;
-  width: 56px;
-  padding: 1px 4px;
-  margin-right: 2px;
-}
-
-.ppp-rot-input:focus {
-  outline: none;
-  border-color: #fbbf24;
-}
-
 .ppp-snippet {
   margin-top: 8px;
   font-family: 'Fira Code', 'Cascadia Code', monospace;
