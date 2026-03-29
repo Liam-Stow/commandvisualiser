@@ -463,7 +463,10 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   }, [fieldHoveredIndex]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
-    const wasClick = !hasMoved.current;
+    // Require that a mousedown on the viewport started this sequence — if mousedown
+    // was stopped by an overlay (zoom buttons, picker panel), isDragging stays false
+    // and we must not treat this mouseup as a field click.
+    const wasClick = isDragging.current && !hasMoved.current;
     isDragging.current = false;
     if (!pickerMode) (e.currentTarget as HTMLElement).style.cursor = 'grab';
 
