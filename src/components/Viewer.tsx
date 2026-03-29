@@ -66,7 +66,6 @@ function ViewerHeader({
       )}
 
       {/* Timeline legend */}
-      <div className="vh-divider" />
       <div className="vh-timeline-controls">
         <Legend />
       </div>

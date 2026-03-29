@@ -200,8 +200,7 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
       <circle
         cx={ix} cy={iy} r={R * 0.65}
         fill={color} opacity={0.2}
-        onMouseEnter={() => onHover(index)}
-        onMouseLeave={() => onHover(null)}
+        style={{ pointerEvents: 'none' }}
       />
     );
   }
@@ -466,8 +465,13 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   }, []);
 
   // Stable callback: suppress hover only while actively dragging, not after.
+  // Also tracks fieldHoveredIndex so the tooltip only shows when the mouse is
+  // actually over the field viewport (not when driven by timeline cross-highlight).
   const handleWaypointHover = useCallback((i: number | null) => {
-    if (!isDragging.current) onHoverIndex(i);
+    if (!isDragging.current) {
+      onHoverIndex(i);
+      setFieldHoveredIndex(i);
+    }
   }, [onHoverIndex]);
 
   const zoomBy = useCallback((factor: number) => {
@@ -484,8 +488,11 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   }, []);
 
   // ── State ───────────────────────────────────────────────────────────────────
+  // Tracks hover that originated inside the field viewport (for tooltip placement).
+  // Distinct from the external hoveredIndex prop, which can also be set by the timeline.
+  const [fieldHoveredIndex, setFieldHoveredIndex] = useState<number | null>(null);
   const [rangeStart, setRangeStart] = useState(0);
-  const [rangeEnd,      setRangeEnd     ] = useState(0);
+  const [rangeEnd,   setRangeEnd  ] = useState(0);
 
   // ── Waypoints ───────────────────────────────────────────────────────────────
   const waypoints = useMemo(
@@ -515,7 +522,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
 
   // ── Render ────────────────────────────────────────────────────────────────
   const W = cfg.imageWidthPx, H = cfg.imageHeightPx;
-  const hoveredWp = hoveredIndex !== null ? waypoints[hoveredIndex] : null;
+  const hoveredWp = fieldHoveredIndex !== null ? waypoints[fieldHoveredIndex] : null;
 
   return (
     <div className="field-view">
