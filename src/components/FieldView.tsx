@@ -650,6 +650,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
                 <span>Picked Pose</span>
                 <button className="ppp-close" onClick={() => { setPickedPose(null); setPickerMode(false); }} title="Dismiss">×</button>
               </div>
+              <div className="ppp-alliance-note">Blue alliance origin</div>
               <table className="fwt-table">
                 <tbody>
                   <tr><td>X</td><td>{pickedPose.x.toFixed(3)} m</td></tr>
