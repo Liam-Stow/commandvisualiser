@@ -425,6 +425,11 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
+    if (pickedPose) {
+      // Scroll rotates the picked pose (5° per tick, reversed so scroll-up = CCW)
+      setPickerRotation(r => r + (e.deltaY < 0 ? 5 : -5));
+      return;
+    }
     const delta  = e.deltaY < 0 ? 1.12 : 1 / 1.12;
     const fitS   = fitRef.current.scale;
     const newS   = Math.min(Math.max(scale * delta, fitS * MIN_SCALE_FACTOR), fitS * MAX_SCALE_FACTOR);
@@ -433,7 +438,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
     const cy     = e.clientY - rect.top;
     setScale(newS);
     setPan({ x: cx - (cx - pan.x) * (newS / scale), y: cy - (cy - pan.y) * (newS / scale) });
-  }, [scale, pan]);
+  }, [scale, pan, pickedPose]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -643,7 +648,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
             <div className="pose-picker-panel">
               <div className="ppp-header">
                 <span>Picked Pose</span>
-                <button className="ppp-close" onClick={() => setPickedPose(null)} title="Dismiss">×</button>
+                <button className="ppp-close" onClick={() => { setPickedPose(null); setPickerMode(false); }} title="Dismiss">×</button>
               </div>
               <table className="fwt-table">
                 <tbody>
