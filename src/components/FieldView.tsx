@@ -417,7 +417,7 @@ function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number
     <div className="tooltip field-waypoint-tooltip" style={{ left: x, top: y }}>
       <div className="fwt-header">
         <span className="fwt-index-dot" style={{ background: speedColor(wp.speedScaling) }} />
-        <span className="fwt-command">{wp.command}</span>
+        <span className="fwt-command">{wp.commandName}</span>
       </div>
       {pose.kind === 'numeric' ? (
         <table className="fwt-table">
@@ -427,7 +427,7 @@ function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number
             <tr><td>θ</td><td>{pose.rotation.toFixed(1)}°</td></tr>
             <tr><td>Speed</td><td style={{ color: speedColor(wp.speedScaling) }}>{Math.round(wp.speedScaling * 100)}%</td></tr>
             <tr><td>Pos tol</td><td>±{(wp.posTolMeters * 100).toFixed(0)} cm</td></tr>
-            {wp.command === 'DriveToPose' && <tr><td>Rot tol</td><td>±{wp.rotTolDeg.toFixed(0)}°</td></tr>}
+            <tr><td>Rot tol</td><td>±{wp.rotTolDeg.toFixed(0)}°</td></tr>
           </tbody>
         </table>
       ) : (

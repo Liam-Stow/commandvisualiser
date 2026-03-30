@@ -7,13 +7,10 @@ export type WaypointPose =
   | { kind: 'named';   name: string };
 
 export interface DriveWaypoint {
-  /** DriveToPose = full pose+tolerance, DriveOverBump = translation only */
-  command: 'DriveToPose' | 'DriveOverBump';
+  commandName: String;
   pose: WaypointPose;
   speedScaling: number;
-  /** metres */
   posTolMeters: number;
-  /** degrees */
   rotTolDeg: number;
   flipForRed: boolean;
   raw: string;
@@ -125,29 +122,7 @@ function parseDriveToPose(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
   const rotTolDeg    = args[3] ? parseDeg(args[3])    : 2.0;
   const flipForRed   = args[4] ? args[4].trim() !== 'false' : true;
 
-  return { command: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw };
-}
-
-function parseDriveOverBump(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
-  const idx = raw.indexOf('DriveOverBump(');
-  if (idx === -1) return null;
-
-  const argsStr = getCallArgs(raw.slice(idx + 'DriveOverBump'.length));
-  const args    = splitTopLevel(argsStr);
-
-  // arg[1] is Translation2d{x, y}
-  let pose: WaypointPose = { kind: 'named', name: 'DriveOverBump target' };
-  if (args[1]) {
-    const t2dMatch = args[1].match(/Translation2d\s*\{([^{}]+)\}/);
-    if (t2dMatch) {
-      const parts = splitTopLevel(t2dMatch[1]);
-      if (parts.length >= 2) {
-        pose = { kind: 'numeric', x: parseMeters(parts[0]), y: parseMeters(parts[1]), rotation: 0 };
-      }
-    }
-  }
-
-  return { command: 'DriveOverBump', pose, speedScaling: 1, posTolMeters: 0.05, rotTolDeg: 5, flipForRed: true, raw };
+  return { commandName: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw };
 }
 
 // ─── Tree walker ──────────────────────────────────────────────────────────────
@@ -157,8 +132,6 @@ export function extractWaypoints(node: AnyCommandNode): DriveWaypoint[] {
     case 'leaf': {
       const dtp = parseDriveToPose(node.raw);
       if (dtp) return [{ ...dtp, nodeId: node.id }];
-      const dob = parseDriveOverBump(node.raw);
-      if (dob) return [{ ...dob, nodeId: node.id }];
       return [];
     }
 

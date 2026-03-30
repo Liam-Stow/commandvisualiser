@@ -195,34 +195,6 @@ describe('DriveToPose parameters', () => {
   });
 });
 
-// ─── DriveOverBump ────────────────────────────────────────────────────────────
-
-describe('DriveOverBump', () => {
-  it('detects DriveOverBump command', () => {
-    const node = leaf(
-      'SubDrivebase::GetInstance().DriveOverBump(0.5, frc::Translation2d{2.0_m, 1.5_m})',
-      'DriveOverBump()'
-    );
-    const wp = extractWaypoints(node);
-    expect(wp).toHaveLength(1);
-    expect(wp[0].command).toBe('DriveOverBump');
-  });
-
-  it('extracts x/y from Translation2d', () => {
-    const node = leaf(
-      'SubDrivebase::GetInstance().DriveOverBump(0.5, frc::Translation2d{2.0_m, 1.5_m})',
-      'DriveOverBump()'
-    );
-    const wp = extractWaypoints(node);
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
-      expect(wp[0].pose.x).toBeCloseTo(2.0);
-      expect(wp[0].pose.y).toBeCloseTo(1.5);
-      expect(wp[0].pose.rotation).toBe(0); // no rotation for DriveOverBump
-    }
-  });
-});
-
 // ─── Non-drive leaves ─────────────────────────────────────────────────────────
 
 describe('non-drive leaf commands', () => {
