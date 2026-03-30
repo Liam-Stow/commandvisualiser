@@ -215,9 +215,9 @@ function RenderNode({
           textAnchor="end"
           dominantBaseline="central"
           fontSize={12}
-          fill="#fbbf24"
-          style={{ pointerEvents: 'none' }}
-        >⏱</text>
+          fill={style.labelFg}
+          style={{ pointerEvents: 'auto', cursor: 'default' }}
+        ><title>Deadline For Group</title>⏱</text>
       )}
 
       {command.type === 'deadline' && children.length > 1 && (() => {
