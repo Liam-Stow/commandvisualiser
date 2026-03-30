@@ -760,17 +760,17 @@ code {
 .slider-ticks {
   position: absolute;
   top: 0;
-  left: 2px; right: 2px;
-  height: 7px;
+  left: 9px; right: 9px;
+  overflow: visible;
+  height: 15px;
 }
 
 .slider-tick {
   position: absolute;
-  top: 1px;
-  width: 3px; height: 6px;
+  width: 3px; height: 15px;
   border-radius: 2px;
+  background-color: var(--border-light);
   transform: translateX(-50%);
-  transition: opacity 0.15s;
 }
 
 .slider-track {
@@ -784,7 +784,7 @@ code {
 
 .slider-track-fill {
   position: absolute;
-  top: -6px; bottom: -6px; /* expanded hit-area above and below the 4px track */
+  top: -4px; bottom: -4px; /* expanded hit-area above and below the 4px track */
   background: var(--accent);
   border-radius: 2px;
   z-index: 2;

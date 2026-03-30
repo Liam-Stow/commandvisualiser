@@ -119,12 +119,7 @@ function RangeSlider({ count, start, end, waypoints, onChange }: RangeSliderProp
           <div
             key={i}
             className="slider-tick"
-            style={{
-              left: `${pct(i)}%`,
-              background: speedColor(wp.speedScaling),
-              opacity: i >= start && i <= end ? 1 : 0.25,
-            }}
-            title={`Step ${i + 1}`}
+            style={{ left: `${pct(i)}%` }}
           />
         ))}
       </div>
