@@ -170,12 +170,12 @@ interface MarkerProps {
   scale: number;
   active: boolean;
   ghost: boolean;
-  showTolerance: boolean;
-  showRotation: boolean;
+  showPosTolerance: boolean;
+  showRotTolerance: boolean;
   onHover: (i: number | null) => void;
 }
 
-function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, showRotation, onHover }: MarkerProps) {
+function WaypointMarker({ wp, index, cfg, scale, active, ghost, showPosTolerance, showRotTolerance, onHover }: MarkerProps) {
   const pose = wp.pose;
   if (pose.kind !== 'numeric') return null;
 
@@ -204,7 +204,7 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
   return (
     <g>
       {/* Decorative elements — no pointer events so they don't expand the hover target */}
-      {showTolerance && tolR > 1 && (
+      {showPosTolerance && tolR > 1 && (
         <circle
           cx={ix} cy={iy} r={tolR}
           fill="rgba(96,165,250,0.07)"
@@ -214,7 +214,7 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
           style={{ pointerEvents: 'none' }}
         />
       )}
-      {showRotation && wp.rotTolDeg > 0 && (
+      {showRotTolerance && wp.rotTolDeg > 0 && (
         <path
           d={arcPath(ix, iy, arrowL + 8 / scale, pose.rotation - wp.rotTolDeg, pose.rotation + wp.rotTolDeg)}
           fill="rgba(250,204,21,0.1)"
@@ -223,7 +223,7 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showTolerance, s
           style={{ pointerEvents: 'none' }}
         />
       )}
-      {showRotation && isFinite(arrowX) && isFinite(arrowY) && (
+      {showRotTolerance && isFinite(arrowX) && isFinite(arrowY) && (
         <>
           <line
             x1={ix} y1={iy} x2={arrowX} y2={arrowY}
@@ -266,9 +266,10 @@ interface PathLinesProps {
   rangeEnd: number;
   cfg: FieldConfig;
   scale: number;
+  showSpeed: boolean;
 }
 
-function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale }: PathLinesProps) {
+function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale, showSpeed }: PathLinesProps) {
   const lines: React.ReactNode[] = [];
 
   for (let i = 1; i < waypoints.length; i++) {
@@ -280,8 +281,7 @@ function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale }: PathLinesPro
     const [x1, y1] = fieldToImagePx(cfg, prev.x, prev.y);
     const [x2, y2] = fieldToImagePx(cfg, curr.x, curr.y);
     const color   = speedColor(waypoints[i].speedScaling);
-    const lw      = (1.5 + waypoints[i].speedScaling * 2.5) / scale;
-    const opacity = 0.5 + waypoints[i].speedScaling * 0.45;
+    const lw      = 3.0 / scale;
 
     const dx = x2 - x1, dy = y2 - y1;
     const len = Math.sqrt(dx * dx + dy * dy);
@@ -298,10 +298,10 @@ function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale }: PathLinesPro
     const fontSize = 8 / scale;
 
     lines.push(
-      <g key={i} opacity={opacity}>
+      <g key={i}>
         <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke={color} strokeWidth={lw} strokeLinecap="round" />
         <polygon points={arrowHeadPoints(lx1, ly1, lx2, ly2, ahSize)} fill={color} />
-        {len > 60 / scale && (
+        {showSpeed && len > 60 / scale && (
           <g>
             <rect x={mx - badgeW / 2} y={my - badgeH / 2} width={badgeW} height={badgeH}
               rx={3 / scale} fill="rgba(15,23,42,0.8)" stroke={color} strokeWidth={0.8 / scale} />
@@ -451,11 +451,12 @@ interface Props {
   onHoverIndex: (i: number | null) => void;
   /** Field display controls — lifted to the combined header in Viewer */
   redAlliance: boolean;
-  showTolerance: boolean;
-  showRotation: boolean;
+  showPosTolerance: boolean;
+  showRotTolerance: boolean;
+  showSpeed: boolean;
 }
 
-export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHoverIndex, redAlliance, showTolerance, showRotation }: Props) {
+export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHoverIndex, redAlliance, showPosTolerance, showRotTolerance, showSpeed }: Props) {
   const cfg = ACTIVE_FIELD;
 
   // ── Zoom / pan ──────────────────────────────────────────────────────────────
@@ -705,6 +706,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
               rangeEnd={rangeEnd}
               cfg={cfg}
               scale={scale}
+              showSpeed={showSpeed}
             />
 
             {waypoints.map((wp, i) => (
@@ -716,8 +718,8 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
                 scale={scale}
                 active={hoveredIndex === i}
                 ghost={i < rangeStart || i > rangeEnd}
-                showTolerance={showTolerance}
-                showRotation={showRotation}
+                showPosTolerance={showPosTolerance}
+                showRotTolerance={showRotTolerance}
                 onHover={handleWaypointHover}
               />
             ))}

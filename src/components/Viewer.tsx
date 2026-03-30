@@ -12,17 +12,20 @@ interface HeaderProps {
   hasWaypoints: boolean;
   redAlliance: boolean;
   setRedAlliance: (v: boolean) => void;
-  showTolerance: boolean;
-  setShowTolerance: (v: boolean) => void;
-  showRotation: boolean;
-  setShowRotation: (v: boolean) => void;
+  showPosTolerance: boolean;
+  setShowPosTolerance: (v: boolean) => void;
+  showRotTolerance: boolean;
+  setShowRotTolerance: (v: boolean) => void;
+  showSpeed: boolean;
+  setShowSpeed: (v: boolean) => void;
 }
 
 function ViewerHeader({
   command, hasWaypoints,
   redAlliance, setRedAlliance,
-  showTolerance, setShowTolerance,
-  showRotation, setShowRotation,
+  showPosTolerance, setShowPosTolerance,
+  showRotTolerance, setShowRotTolerance,
+  showSpeed, setShowSpeed,
 }: HeaderProps) {
   return (
     <div className="viewer-header">
@@ -46,12 +49,16 @@ function ViewerHeader({
           <div className="vh-divider" />
           <div className="vh-field-controls">
             <label className="toggle-label">
-              <input type="checkbox" checked={showTolerance} onChange={e => setShowTolerance(e.target.checked)} />
+              <input type="checkbox" checked={showPosTolerance} onChange={e => setShowPosTolerance(e.target.checked)} />
               Pos Tol
             </label>
             <label className="toggle-label">
-              <input type="checkbox" checked={showRotation} onChange={e => setShowRotation(e.target.checked)} />
+              <input type="checkbox" checked={showRotTolerance} onChange={e => setShowRotTolerance(e.target.checked)} />
               Rot Tol
+            </label>
+            <label className="toggle-label">
+              <input type="checkbox" checked={showSpeed} onChange={e => setShowSpeed(e.target.checked)} />
+              Speed
             </label>
             <div className="alliance-toggle">
               <button className={`alliance-btn ${!redAlliance ? 'active-blue' : ''}`} onClick={() => setRedAlliance(false)}>Blue</button>
@@ -83,8 +90,9 @@ export function Viewer({ command }: Props) {
 
   // Lifted from FieldView
   const [redAlliance,   setRedAlliance  ] = useState(false);
-  const [showTolerance, setShowTolerance] = useState(true);
-  const [showRotation,  setShowRotation ] = useState(true);
+  const [showPosTolerance, setShowPosTolerance] = useState(true);
+  const [showRotTolerance,  setShowRotTolerance ] = useState(true);
+  const [showSpeed,  setShowSpeed ] = useState(false);
 
   // Lifted from TimelineView
   const [zoom, setZoom] = useState(1.0);
@@ -122,8 +130,9 @@ export function Viewer({ command }: Props) {
       command={command}
       hasWaypoints={hasWaypoints}
       redAlliance={redAlliance} setRedAlliance={setRedAlliance}
-      showTolerance={showTolerance} setShowTolerance={setShowTolerance}
-      showRotation={showRotation} setShowRotation={setShowRotation}
+      showPosTolerance={showPosTolerance} setShowPosTolerance={setShowPosTolerance}
+      showRotTolerance={showRotTolerance} setShowRotTolerance={setShowRotTolerance}
+      showSpeed={showSpeed} setShowSpeed={setShowSpeed}
     />
   );
 
@@ -146,8 +155,9 @@ export function Viewer({ command }: Props) {
           hoveredIndex={hoveredWaypointIndex}
           onHoverIndex={setHoveredWaypointIndex}
           redAlliance={redAlliance}
-          showTolerance={showTolerance}
-          showRotation={showRotation}
+          showPosTolerance={showPosTolerance}
+          showRotTolerance={showRotTolerance}
+          showSpeed={showSpeed}
         />
       </div>
       <div className="resize-handle-h" onMouseDown={startVerticalResize} />
