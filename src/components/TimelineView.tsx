@@ -261,42 +261,6 @@ function RenderNode({
   );
 }
 
-// ─── Legend ───────────────────────────────────────────────────────────────────
-
-export function Legend() {
-  const items = [
-    { label: 'Sequence', style: TYPE_STYLE.sequence    },
-    { label: 'Parallel', style: TYPE_STYLE.parallel    },
-    { label: 'Race',     style: TYPE_STYLE.race        },
-    { label: 'Deadline', style: TYPE_STYLE.deadline    },
-    { label: 'If/Else',  style: TYPE_STYLE.conditional },
-    { label: 'Decorator', style: TYPE_STYLE.decorated, dash: true },
-  ];
-  return (
-    <div className="legend">
-      {items.map(({ label, style, dash }) => (
-        <div key={label} className="legend-item">
-          <svg width="18" height="14" style={{ flexShrink: 0 }}>
-            <rect x={1} y={1} width={16} height={12} rx={2} fill={style.headerBg} stroke={style.border} strokeWidth={1.5} strokeDasharray={dash ? '3 2' : undefined} />
-          </svg>
-          <span>{label}</span>
-        </div>
-      ))}
-      <div className="legend-item">
-        <span style={{ fontSize: 14, lineHeight: 1 }}>⏱</span>
-        <span>Deadline</span>
-      </div>
-      <div className="legend-item">
-        <svg width="18" height="14" style={{ flexShrink: 0 }}>
-          <rect x={1} y={1} width={16} height={12} rx={2} fill="#1e293b" stroke="#2d6a45" strokeWidth={1.5} />
-          <circle cx={13} cy={4} r={3} fill="#2d6a45" />
-        </svg>
-        <span>Drive</span>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface Props {

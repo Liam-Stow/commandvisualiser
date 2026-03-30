@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { CommandFunction } from '../types/command';
 import type { DriveWaypoint } from '../parser/driveToPoseParser';
 import { extractWaypoints } from '../parser/driveToPoseParser';
-import { TimelineView, Legend } from './TimelineView';
+import { TimelineView } from './TimelineView';
 import { FieldView } from './FieldView';
 
 // ─── Combined header ──────────────────────────────────────────────────────────
@@ -68,10 +68,6 @@ function ViewerHeader({
         </>
       )}
 
-      {/* Timeline legend */}
-      <div className="vh-timeline-controls">
-        <Legend />
-      </div>
     </div>
   );
 }

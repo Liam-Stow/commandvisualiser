@@ -354,14 +354,6 @@ body {
   flex-wrap: wrap;
 }
 
-.vh-timeline-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
 .timeline-cmd-name {
   font-size: 14px;
   font-weight: 700;
@@ -429,31 +421,6 @@ body {
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: var(--border-light) transparent;
-}
-
-/* ─── Legend ───────────────────────────────────────────────────────────────── */
-
-.legend {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.legend-divider {
-  width: 1px;
-  height: 16px;
-  background: var(--border-light);
-  flex-shrink: 0;
 }
 
 /* ─── Tooltip ──────────────────────────────────────────────────────────────── */

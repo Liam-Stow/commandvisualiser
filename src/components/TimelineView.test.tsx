@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TimelineView, Legend } from './TimelineView';
+import { TimelineView } from './TimelineView';
 import type { CommandFunction, AnyCommandNode } from '../types/command';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -52,7 +52,6 @@ describe('node type headers', () => {
   it('renders SEQUENCE header for a sequence node', () => {
     const cmd = makeCmd('TestSeq', seq(leaf('a'), leaf('b')));
     render(<TimelineView command={cmd} />);
-    // SEQUENCE appears in the SVG header text (distinct from legend "Sequence")
     const matches = screen.getAllByText('SEQUENCE');
     expect(matches.length).toBeGreaterThanOrEqual(1);
   });
@@ -243,23 +242,6 @@ describe('zoom controls', () => {
     render(<TimelineView command={makeCmd('Test', leaf('a'))} zoom={1.3} setZoom={setZoom} />);
     fireEvent.click(screen.getByTitle('Reset zoom'));
     expect(setZoom).toHaveBeenCalledWith(1);
-  });
-});
-
-// ─── Legend ───────────────────────────────────────────────────────────────────
-// Legend is exported from TimelineView and rendered by ViewerHeader (not inside
-// TimelineView itself), so we test it as a standalone component.
-
-describe('legend', () => {
-  it('shows all node type labels in the legend', () => {
-    render(<Legend />);
-    expect(screen.getByText('Sequence')).toBeTruthy();
-    expect(screen.getByText('Parallel')).toBeTruthy();
-    expect(screen.getByText('Race')).toBeTruthy();
-    // "Deadline" appears twice: once for the group type, once for the ⏱ icon row
-    expect(screen.getAllByText('Deadline').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('If/Else')).toBeTruthy();
-    expect(screen.getByText('Decorator')).toBeTruthy();
   });
 });
 
