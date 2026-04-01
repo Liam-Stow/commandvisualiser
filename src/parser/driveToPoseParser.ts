@@ -95,10 +95,6 @@ function parsePoseArg(arg: string): WaypointPose {
     }
   }
 
-  // fieldpos::CONSTANT_NAME
-  const fieldposMatch = arg.match(/fieldpos::(\w+)/);
-  if (fieldposMatch) return { kind: 'named', name: fieldposMatch[1] };
-
   // Generic named reference: last word before semicolon / end
   const namedMatch = arg.match(/return\s+([\w:]+)\s*;?\s*$/);
   if (namedMatch) return { kind: 'named', name: namedMatch[1] };

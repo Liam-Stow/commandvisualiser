@@ -85,8 +85,8 @@ function RenderNode({
     const subsystem = command.type === 'leaf' ? command.subsystem : undefined;
 
     const waypointIndex = command.type === 'leaf' ? (driveNodeMap.get(command.id) ?? null) : null;
-    const isDriveLine   = waypointIndex !== null;
-    const isWpHovered   = isDriveLine && hoveredWaypointIndex === waypointIndex;
+    const isDriveCommand   = waypointIndex !== null && command.type;
+    const isWpHovered   = isDriveCommand && hoveredWaypointIndex === waypointIndex;
 
     const padH  = 8;
     const textX = gx + padH;
@@ -99,19 +99,19 @@ function RenderNode({
 
     // Highlight when this leaf's waypoint is being hovered from the field
     const fillColor  = isWpHovered ? '#1a3a2a' : '#1e293b';
-    const strokeColor = isWpHovered ? '#22c55e' : isDriveLine ? '#2d6a45' : '#475569';
-    const strokeWidth = isWpHovered ? 2 : isDriveLine ? 1.5 : 1.5;
+    const strokeColor = isWpHovered ? '#22c55e' : isDriveCommand ? '#2f794c' : '#475569';
+    const strokeWidth = 1.5;
 
     return (
       <g
         style={{ cursor: 'default' }}
         onMouseEnter={e => {
           onHover({ x: e.clientX + 14, y: e.clientY + 14, content: raw });
-          if (isDriveLine) onHoverWaypointIndex?.(waypointIndex);
+          if (isDriveCommand) onHoverWaypointIndex?.(waypointIndex);
         }}
         onMouseLeave={() => {
           onHover(null);
-          if (isDriveLine) onHoverWaypointIndex?.(null);
+          if (isDriveCommand) onHoverWaypointIndex?.(null);
         }}
       >
         <rect
@@ -121,16 +121,6 @@ function RenderNode({
           stroke={strokeColor}
           strokeWidth={strokeWidth}
         />
-
-        {/* Drive indicator dot */}
-        {isDriveLine && (
-          <circle
-            cx={gx + gw - 8} cy={gy + 8} r={4}
-            fill={isWpHovered ? '#22c55e' : '#2d6a45'}
-            style={{ pointerEvents: 'none' }}
-          />
-        )}
-
         {showSub && (
           <text
             x={textX + textW / 2} y={subY}
@@ -155,12 +145,12 @@ function RenderNode({
         </text>
         {isDeadlineChild && (
           <text
-            x={gx + gw - 14} y={gy + gh / 2}
+            x={gx + gw - 14} y={gy + hh / 2}
             dominantBaseline="central"
             fontSize={12}
-            fill="#fbbf24"
-            style={{ pointerEvents: 'none' }}
-          >⏱</text>
+            fill={isWpHovered ? '#86efac' : '#e2e8f0'}
+            style={{ pointerEvents: 'auto', cursor: 'default' }}
+          ><title>Deadline For Group</title>⏱</text>
         )}
       </g>
     );
@@ -282,7 +272,7 @@ export function TimelineView({ command, zoom = 1.0, setZoom = () => {}, waypoint
   // Build nodeId → waypoint index map for cross-highlighting
   const driveNodeMap = useMemo(() => {
     const map = new Map<string, number>();
-    waypoints?.forEach((wp, i) => map.set(wp.nodeId, i));
+    waypoints?.forEach((wp, i) => { if (wp.pose.kind === 'numeric') map.set(wp.nodeId, i); });
     return map;
   }, [waypoints]);
 
