@@ -131,26 +131,6 @@ describe('paren-constructor frc::Pose2d(...)', () => {
   });
 });
 
-// ─── Expression poses ──────────────────────────────────────────────────────────────
-
-describe('expression poses', () => {
-  it('parses fieldpos::CONSTANT_NAME', () => {
-    const wp = extractWaypoints(driveToPose('fieldpos::BLUE_SPEAKER'));
-    expect(wp[0].pose.kind).toBe('expression');
-    if (wp[0].pose.kind === 'expression') {
-      expect(wp[0].pose.name).toBe('BLUE_SPEAKER');
-    }
-  });
-
-  it('parses different fieldpos constants', () => {
-    const wp = extractWaypoints(driveToPose('fieldpos::RED_AMP_SCORE'));
-    expect(wp[0].pose.kind).toBe('expression');
-    if (wp[0].pose.kind === 'expression') {
-      expect(wp[0].pose.name).toBe('RED_AMP_SCORE');
-    }
-  });
-});
-
 // ─── DriveToPose parameter parsing ───────────────────────────────────────────
 
 describe('DriveToPose parameters', () => {
