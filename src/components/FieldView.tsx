@@ -44,11 +44,11 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 function applyAllianceFlip(wp: DriveWaypoint, redAlliance: boolean, cfg: FieldConfig): DriveWaypoint {
   if (!redAlliance || !wp.flipForRed) return wp;
   const pose = wp.pose;
-  if (pose.kind !== 'numeric') return wp;
+  if (pose.kind !== 'literal') return wp;
   return {
     ...wp,
     pose: {
-      kind: 'numeric',
+      kind: 'literal',
       x: flipXForRed(cfg, pose.x),
       y: pose.y,
       rotation: flipRotForRed(pose.rotation),
@@ -177,7 +177,7 @@ interface MarkerProps {
 
 function WaypointMarker({ wp, index, cfg, scale, active, ghost, showPosTolerance, showRotTolerance, onHover }: MarkerProps) {
   const pose = wp.pose;
-  if (pose.kind !== 'numeric') return null;
+  if (pose.kind !== 'literal') return null;
 
   const [ix, iy] = fieldToImagePx(cfg, pose.x, pose.y);
   const color = speedColor(wp.speedScaling);
@@ -276,7 +276,7 @@ function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale, showSpeed }: P
     if (i < rangeStart || i > rangeEnd) continue;
     const prev = waypoints[i - 1].pose;
     const curr = waypoints[i].pose;
-    if (prev.kind !== 'numeric' || curr.kind !== 'numeric') continue;
+    if (prev.kind !== 'literal' || curr.kind !== 'literal') continue;
 
     const [x1, y1] = fieldToImagePx(cfg, prev.x, prev.y);
     const [x2, y2] = fieldToImagePx(cfg, curr.x, curr.y);
@@ -419,7 +419,7 @@ function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number
         <span className="fwt-index-dot" style={{ background: speedColor(wp.speedScaling) }} />
         <span className="fwt-command">{wp.commandName}</span>
       </div>
-      {pose.kind === 'numeric' ? (
+      {pose.kind === 'literal' ? (
         <table className="fwt-table">
           <tbody>
             <tr><td>X</td><td>{pose.x.toFixed(3)} m</td></tr>
@@ -431,7 +431,7 @@ function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number
           </tbody>
         </table>
       ) : (
-        <div className="fwt-named">{pose.name}</div>
+        <div className="fwt-named">{pose.expression}</div>
       )}
     </div>
   );
@@ -766,15 +766,17 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
       </div>
 
       {/* ── Path range slider ── */}
-      <div className="field-slider-section">
+      {waypoints.length > 1 && (
+        <div className="field-slider-section">
         <RangeSlider
-          count={waypoints.length}
-          start={rangeStart}
-          end={rangeEnd}
-          waypoints={waypoints}
-          onChange={(s, e) => { setRangeStart(s); setRangeEnd(e); }}
-        />
-      </div>
+            count={waypoints.length}
+            start={rangeStart}
+            end={rangeEnd}
+            waypoints={waypoints}
+            onChange={(s, e) => { setRangeStart(s); setRangeEnd(e); }}
+          />
+        </div>
+      )}
     </div>
   );
 }

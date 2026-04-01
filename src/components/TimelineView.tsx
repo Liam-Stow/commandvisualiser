@@ -272,7 +272,7 @@ export function TimelineView({ command, zoom = 1.0, setZoom = () => {}, waypoint
   // Build nodeId → waypoint index map for cross-highlighting
   const driveNodeMap = useMemo(() => {
     const map = new Map<string, number>();
-    waypoints?.forEach((wp, i) => { if (wp.pose.kind === 'numeric') map.set(wp.nodeId, i); });
+    waypoints?.forEach((wp, i) => { if (wp.pose.kind === 'literal') map.set(wp.nodeId, i); });
     return map;
   }, [waypoints]);
 

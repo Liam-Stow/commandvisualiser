@@ -33,13 +33,13 @@ function driveToPose(
   return leaf(`SubDrivebase::GetInstance().DriveToPose(${args})`, 'DriveToPose()');
 }
 
-// ─── Numeric poses — unit conversions ─────────────────────────────────────────
+// ─── Literal poses — unit conversions ─────────────────────────────────────────
 
-describe('numeric pose — unit conversions', () => {
+describe('literal pose — unit conversions', () => {
   it('parses metres', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{1.5_m, 2.0_m, 90_deg}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.x).toBeCloseTo(1.5);
       expect(wp[0].pose.y).toBeCloseTo(2.0);
       expect(wp[0].pose.rotation).toBeCloseTo(90);
@@ -48,8 +48,8 @@ describe('numeric pose — unit conversions', () => {
 
   it('parses centimetres', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{150_cm, 200_cm, 0_deg}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.x).toBeCloseTo(1.5);
       expect(wp[0].pose.y).toBeCloseTo(2.0);
     }
@@ -57,8 +57,8 @@ describe('numeric pose — unit conversions', () => {
 
   it('parses feet', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{3_ft, 6_ft, 0_deg}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.x).toBeCloseTo(3 * 0.3048, 3);
       expect(wp[0].pose.y).toBeCloseTo(6 * 0.3048, 3);
     }
@@ -66,8 +66,8 @@ describe('numeric pose — unit conversions', () => {
 
   it('parses inches', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{60_in, 24_in, 0_deg}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.x).toBeCloseTo(60 * 0.0254, 3);
       expect(wp[0].pose.y).toBeCloseTo(24 * 0.0254, 3);
     }
@@ -75,32 +75,32 @@ describe('numeric pose — unit conversions', () => {
 
   it('parses degrees rotation', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{1_m, 1_m, 180_deg}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.rotation).toBeCloseTo(180);
     }
   });
 
   it('parses radians rotation', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{1_m, 1_m, 1.5708_rad}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.rotation).toBeCloseTo(90, 0);
     }
   });
 
   it('parses turns rotation (0.25 tr = 90 deg)', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{1_m, 1_m, 0.25_tr}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.rotation).toBeCloseTo(90, 1);
     }
   });
 
   it('parses negative angles', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{1_m, 1_m, -45_deg}'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.rotation).toBeCloseTo(-45);
     }
   });
@@ -108,8 +108,8 @@ describe('numeric pose — unit conversions', () => {
   it('parses zero pose', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d{0_m, 0_m, 0_deg}'));
     expect(wp).toHaveLength(1);
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.x).toBe(0);
       expect(wp[0].pose.y).toBe(0);
       expect(wp[0].pose.rotation).toBe(0);
@@ -122,8 +122,8 @@ describe('numeric pose — unit conversions', () => {
 describe('paren-constructor frc::Pose2d(...)', () => {
   it('parses frc::Pose2d(x, y, rot) with parens', () => {
     const wp = extractWaypoints(driveToPose('frc::Pose2d(1.5_m, 3.0_m, 45_deg)'));
-    expect(wp[0].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') {
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
       expect(wp[0].pose.x).toBeCloseTo(1.5);
       expect(wp[0].pose.y).toBeCloseTo(3.0);
       expect(wp[0].pose.rotation).toBeCloseTo(45);
@@ -131,21 +131,21 @@ describe('paren-constructor frc::Pose2d(...)', () => {
   });
 });
 
-// ─── Named poses ──────────────────────────────────────────────────────────────
+// ─── Expression poses ──────────────────────────────────────────────────────────────
 
-describe('named poses', () => {
+describe('expression poses', () => {
   it('parses fieldpos::CONSTANT_NAME', () => {
     const wp = extractWaypoints(driveToPose('fieldpos::BLUE_SPEAKER'));
-    expect(wp[0].pose.kind).toBe('named');
-    if (wp[0].pose.kind === 'named') {
+    expect(wp[0].pose.kind).toBe('expression');
+    if (wp[0].pose.kind === 'expression') {
       expect(wp[0].pose.name).toBe('BLUE_SPEAKER');
     }
   });
 
   it('parses different fieldpos constants', () => {
     const wp = extractWaypoints(driveToPose('fieldpos::RED_AMP_SCORE'));
-    expect(wp[0].pose.kind).toBe('named');
-    if (wp[0].pose.kind === 'named') {
+    expect(wp[0].pose.kind).toBe('expression');
+    if (wp[0].pose.kind === 'expression') {
       expect(wp[0].pose.name).toBe('RED_AMP_SCORE');
     }
   });
@@ -225,10 +225,10 @@ describe('tree walking', () => {
     );
     const wp = extractWaypoints(node);
     expect(wp).toHaveLength(2);
-    expect(wp[0].pose.kind).toBe('numeric');
-    expect(wp[1].pose.kind).toBe('numeric');
-    if (wp[0].pose.kind === 'numeric') expect(wp[0].pose.x).toBeCloseTo(1.0);
-    if (wp[1].pose.kind === 'numeric') expect(wp[1].pose.x).toBeCloseTo(3.0);
+    expect(wp[0].pose.kind).toBe('literal');
+    expect(wp[1].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') expect(wp[0].pose.x).toBeCloseTo(1.0);
+    if (wp[1].pose.kind === 'literal') expect(wp[1].pose.x).toBeCloseTo(3.0);
   });
 
   it('parallel: collects waypoints from all children', () => {

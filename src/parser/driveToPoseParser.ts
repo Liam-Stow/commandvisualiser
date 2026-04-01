@@ -3,8 +3,8 @@ import type { AnyCommandNode } from '../types/command';
 // ─── Output types ─────────────────────────────────────────────────────────────
 
 export type WaypointPose =
-  | { kind: 'numeric'; x: number; y: number; rotation: number }
-  | { kind: 'named';   name: string };
+  | { kind: 'literal'; x: number; y: number; rotation: number }
+  | { kind: 'expression'; expression: string };
 
 export interface DriveWaypoint {
   commandName: String;
@@ -73,7 +73,7 @@ function parsePoseArg(arg: string): WaypointPose {
     const parts = splitTopLevel(braceMatch[1]);
     if (parts.length >= 3) {
       return {
-        kind: 'numeric',
+        kind: 'literal',
         x: parseMeters(parts[0]),
         y: parseMeters(parts[1]),
         rotation: parseDeg(parts[2]),
@@ -87,7 +87,7 @@ function parsePoseArg(arg: string): WaypointPose {
     const parts = splitTopLevel(parenMatch[1]);
     if (parts.length >= 3) {
       return {
-        kind: 'numeric',
+        kind: 'literal',
         x: parseMeters(parts[0]),
         y: parseMeters(parts[1]),
         rotation: parseDeg(parts[2]),
@@ -95,11 +95,7 @@ function parsePoseArg(arg: string): WaypointPose {
     }
   }
 
-  // Generic named reference: last word before semicolon / end
-  const namedMatch = arg.match(/return\s+([\w:]+)\s*;?\s*$/);
-  if (namedMatch) return { kind: 'named', name: namedMatch[1] };
-
-  return { kind: 'named', name: arg.replace(/\s+/g, ' ').trim().slice(0, 40) };
+  return { kind: 'expression', expression: arg.replace(/\s+/g, ' ').trim().slice(0, 40) };
 }
 
 // ─── DriveToPose call parser ──────────────────────────────────────────────────
@@ -112,7 +108,9 @@ function parseDriveToPose(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
   const args    = splitTopLevel(argsStr);
   if (args.length < 2) return null;
 
-  const pose         = parsePoseArg(args[0]);
+  const pose = parsePoseArg(args[0]);
+  if (pose.kind !== 'literal') return null; // For simplicity, only handle literal poses for now
+
   const speedScaling = parseFloat(args[1]) || 1.0;
   const posTolMeters = args[2] ? parseMeters(args[2]) : 0.02;
   const rotTolDeg    = args[3] ? parseDeg(args[3])    : 2.0;
