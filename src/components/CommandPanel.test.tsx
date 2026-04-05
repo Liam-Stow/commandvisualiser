@@ -26,11 +26,6 @@ const race = (...children: AnyCommandNode[]): AnyCommandNode => ({ type: 'race',
 // ─── Empty states ─────────────────────────────────────────────────────────────
 
 describe('empty states', () => {
-  it('shows empty state when no file is selected', () => {
-    render(<CommandPanel file={null} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText(/Select a file/)).toBeTruthy();
-  });
-
   it('shows no-commands message when file has zero functions', () => {
     render(<CommandPanel file={makeFile([])} selectedCommand={null} onSelectCommand={() => {}} />);
     expect(screen.getByText(/No/)).toBeTruthy();

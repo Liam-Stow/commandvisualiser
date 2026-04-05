@@ -24,9 +24,9 @@ const par = (...children: AnyCommandNode[]): AnyCommandNode => ({
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 describe('empty state', () => {
-  it('shows empty message when command is null', () => {
-    render(<TimelineView command={null} />);
-    expect(screen.getByText(/Select a command/)).toBeTruthy();
+  it('renders nothing when command is null', () => {
+    const { container } = render(<TimelineView command={null} />);
+    expect(container.firstChild).toBeNull();
   });
 
   it('does not render SVG when command is null', () => {
