@@ -245,12 +245,6 @@ body {
   white-space: nowrap;
 }
 
-.file-panel-count {
-  font-size: 11px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
 .command-list {
   flex: 1;
   overflow-y: auto;

@@ -1,4 +1,4 @@
-import type { CommandFunction, ParsedFile } from '../types/command';
+import type { AnyCommandNode, CommandFunction, ParsedFile } from '../types/command';
 
 interface Props {
   file: ParsedFile;
@@ -30,13 +30,21 @@ function commandTypeClass(cmd: CommandFunction): string {
   }
 }
 
-function childCount(cmd: CommandFunction): number {
-  const n = cmd.node;
-  if (n.type === 'sequence' || n.type === 'parallel' || n.type === 'race') return n.children.length;
-  if (n.type === 'deadline') return 1 + n.others.length;
-  if (n.type === 'conditional') return 2;
-  if (n.type === 'decorated') return 1;
-  return 0;
+function leafNodeCount(node: AnyCommandNode): number {
+  switch (node.type) {
+    case 'sequence':
+    case 'parallel':
+    case 'race':
+      return node.children.reduce((sum, c) => sum + leafNodeCount(c), 0);
+    case 'deadline':
+      return leafNodeCount(node.deadline) + node.others.reduce((sum, c) => sum + leafNodeCount(c), 0);
+    case 'conditional':
+      return leafNodeCount(node.trueBranch) + leafNodeCount(node.falseBranch);
+    case 'decorated':
+      return leafNodeCount(node.child);
+    default:
+      return 1; // leaf and unknown
+  }
 }
 
 export function CommandPanel({ file, selectedCommand, onSelectCommand }: Props) {
@@ -57,12 +65,11 @@ export function CommandPanel({ file, selectedCommand, onSelectCommand }: Props) 
     <div className="command-panel">
       <div className="file-panel-header">
         <span className="file-panel-name">{file.fileName}</span>
-        <span className="file-panel-count">{file.functions.length} commands</span>
       </div>
       <div className="command-list">
         {file.functions.map(cmd => {
           const active = selectedCommand?.fullName === cmd.fullName && selectedCommand?.name === cmd.name;
-          const count  = childCount(cmd);
+          const count  = leafNodeCount(cmd.node);
           return (
             <button
               key={cmd.fullName + cmd.name}
@@ -73,11 +80,9 @@ export function CommandPanel({ file, selectedCommand, onSelectCommand }: Props) 
                 {commandTypePreview(cmd)}
               </span>
               <span className="cmd-name">{cmd.name}</span>
-              {count > 0 && (
-                <span className="cmd-children" title={`${count} child command${count !== 1 ? 's' : ''}`}>
-                  {count}
-                </span>
-              )}
+              <span className="cmd-children" title={`${count} leaf command${count !== 1 ? 's' : ''}`}>
+                {count}
+              </span>
             </button>
           );
         })}

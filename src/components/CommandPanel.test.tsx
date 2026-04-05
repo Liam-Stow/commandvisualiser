@@ -47,12 +47,6 @@ describe('command list', () => {
     expect(screen.getByText('scoring.cpp')).toBeTruthy();
   });
 
-  it('shows the command count', () => {
-    const file = makeFile([makeCmd('A', leaf('a')), makeCmd('B', leaf('b'))]);
-    render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('2 commands')).toBeTruthy();
-  });
-
   it('renders a button for each command', () => {
     const file = makeFile([makeCmd('CmdA', leaf('a')), makeCmd('CmdB', leaf('b'))]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
@@ -143,24 +137,24 @@ describe('type badges', () => {
   });
 });
 
-// ─── Child count ──────────────────────────────────────────────────────────────
+// ─── Leaf count ───────────────────────────────────────────────────────────────
 
-describe('child count', () => {
-  it('shows child count for a sequence with 3 children', () => {
+describe('leaf count', () => {
+  it('shows leaf count for a sequence with 3 children', () => {
     const node = seq(leaf('a'), leaf('b'), leaf('c'));
     const file = makeFile([makeCmd('MySeq', node)]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
     expect(screen.getByText('3')).toBeTruthy();
   });
 
-  it('shows child count for a parallel', () => {
+  it('shows leaf count for a parallel', () => {
     const node = par(leaf('a'), leaf('b'));
     const file = makeFile([makeCmd('MyPar', node)]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
     expect(screen.getByText('2')).toBeTruthy();
   });
 
-  it('shows 2 for conditional (always two branches)', () => {
+  it('shows 2 for conditional with two leaf branches', () => {
     const node: AnyCommandNode = {
       type: 'conditional', id: 'c',
       trueBranch: leaf('t'), falseBranch: leaf('f'),
@@ -170,7 +164,7 @@ describe('child count', () => {
     expect(screen.getByText('2')).toBeTruthy();
   });
 
-  it('counts deadline+others for deadline node', () => {
+  it('counts all leaves across deadline+others', () => {
     const node: AnyCommandNode = {
       type: 'deadline', id: 'd',
       deadline: leaf('a'),
@@ -178,7 +172,7 @@ describe('child count', () => {
     };
     const file = makeFile([makeCmd('MyDl', node)]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('3')).toBeTruthy(); // 1 deadline + 2 others
+    expect(screen.getByText('3')).toBeTruthy();
   });
 
   it('shows 1 for decorated node', () => {
@@ -192,14 +186,18 @@ describe('child count', () => {
     expect(screen.getByText('1')).toBeTruthy();
   });
 
-  it('does not show count for leaf (0 children)', () => {
+  it('shows 1 for a bare leaf command', () => {
     const file = makeFile([makeCmd('MyLeaf', leaf('a'))]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    // There should be no count element since count=0
-    const buttons = screen.getAllByRole('button');
-    // The button text content should not contain a standalone number
-    const btnText = buttons[0].textContent ?? '';
-    expect(btnText).not.toMatch(/^\d+$/); // no lone number
+    expect(screen.getByText('1')).toBeTruthy();
+  });
+
+  it('counts all leaves recursively in a nested tree', () => {
+    // seq( par(leaf, leaf), leaf ) → 3 leaves, not 2 direct children
+    const node = seq(par(leaf('a'), leaf('b')), leaf('c'));
+    const file = makeFile([makeCmd('MyNested', node)]);
+    render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
+    expect(screen.getByText('3')).toBeTruthy();
   });
 });
 
