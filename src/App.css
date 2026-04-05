@@ -164,7 +164,7 @@ body {
   border-right: 2px solid var(--accent);
 }
 
-.file-icon { font-size: 13px; flex-shrink: 0; }
+.file-icon { flex-shrink: 0; }
 
 .file-name {
   flex: 1;

@@ -42,9 +42,13 @@ function childCount(cmd: CommandFunction): number {
 export function CommandPanel({ file, selectedCommand, onSelectCommand }: Props) {
   if (file.functions.length === 0) {
     return (
-      <div className="command-panel empty-panel">
-        <div className="file-panel-header">{file.fileName}</div>
-        <p>No <code>frc2::CommandPtr</code> functions found.</p>
+      <div className="command-panel">
+        <div className="file-panel-header">
+          <span className="file-panel-name">{file.fileName}</span>
+        </div>
+        <div className="empty-panel">
+          <p>No <code>frc2::CommandPtr</code> functions found.</p>
+        </div>
       </div>
     );
   }

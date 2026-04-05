@@ -10,10 +10,49 @@ interface Props {
   onOpenWithPicker: () => void;
 }
 
+interface FileItemProps {
+  file: ParsedFile;
+  active: boolean;
+  onSelect: (file: ParsedFile) => void;
+}
+
+function FileItem({ file, active, onSelect }: FileItemProps) {
+  return (
+    <button
+      className={`file-item ${active ? 'active' : ''}`}
+      onClick={() => onSelect(file)}
+      title={file.filePath}
+    >
+      <span className="file-icon"><CategoryIcon cat={file.category} /></span>
+      <span className="file-name">{file.fileName}</span>
+      <span className="file-count">{file.functions.length}</span>
+    </button>
+  );
+}
+
+interface FileGroupProps {
+  title: string;
+  items: ParsedFile[];
+  selectedFile: ParsedFile | null;
+  onSelect: (file: ParsedFile) => void;
+}
+
+function FileGroup({ title, items, selectedFile, onSelect }: FileGroupProps) {
+  if (items.length === 0) return null;
+  return (
+    <div className="file-group">
+      <div className="file-group-header">{title}</div>
+      {items.map(f => (
+        <FileItem key={f.filePath} file={f} active={selectedFile?.filePath === f.filePath} onSelect={onSelect} />
+      ))}
+    </div>
+  );
+}
+
 function CategoryIcon({ cat }: { cat: ParsedFile['category'] }) {
   if (cat === 'commands') {
     return (
-      <svg width="11" height="11" viewBox="0 0 10 13" fill="currentColor" aria-hidden>
+      <svg width="11" height="11" viewBox="0 0 10 13" preserveAspectRatio="xMidYMid meet" fill="currentColor" aria-hidden>
         <path d="M6.5 0L0 7.5h4.5L3 13 10 5H5.5L6.5 0z" fillRule="evenodd"/>
       </svg>
     );
@@ -48,31 +87,6 @@ export function FileSidebar({ files, selectedFile, watching, onSelectFile, onLoa
   const commands   = files.filter(f => f.category === 'commands');
   const subsystems = files.filter(f => f.category === 'subsystems');
   const other      = files.filter(f => f.category === 'other');
-
-  function FileItem({ file }: { file: ParsedFile }) {
-    const active = selectedFile?.filePath === file.filePath;
-    return (
-      <button
-        className={`file-item ${active ? 'active' : ''}`}
-        onClick={() => onSelectFile(file)}
-        title={file.filePath}
-      >
-        <span className="file-icon"><CategoryIcon cat={file.category} /></span>
-        <span className="file-name">{file.fileName}</span>
-        <span className="file-count">{file.functions.length}</span>
-      </button>
-    );
-  }
-
-  function FileGroup({ title, items }: { title: string; items: ParsedFile[] }) {
-    if (items.length === 0) return null;
-    return (
-      <div className="file-group">
-        <div className="file-group-header">{title}</div>
-        {items.map(f => <FileItem key={f.filePath} file={f} />)}
-      </div>
-    );
-  }
 
   return (
     <aside className="sidebar">
@@ -113,9 +127,9 @@ export function FileSidebar({ files, selectedFile, watching, onSelectFile, onLoa
           </div>
         ) : (
           <>
-            <FileGroup title="Commands" items={commands} />
-            <FileGroup title="Subsystems" items={subsystems} />
-            <FileGroup title="Other" items={other} />
+            <FileGroup title="Commands"   items={commands}   selectedFile={selectedFile} onSelect={onSelectFile} />
+            <FileGroup title="Subsystems" items={subsystems} selectedFile={selectedFile} onSelect={onSelectFile} />
+            <FileGroup title="Other"      items={other}      selectedFile={selectedFile} onSelect={onSelectFile} />
           </>
         )}
       </div>
