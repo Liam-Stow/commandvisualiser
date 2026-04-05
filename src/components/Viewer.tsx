@@ -8,7 +8,7 @@ import { FieldView } from './FieldView';
 // ─── Combined header ──────────────────────────────────────────────────────────
 
 interface HeaderProps {
-  command: CommandFunction | null;
+  command: CommandFunction;
   hasWaypoints: boolean;
   redAlliance: boolean;
   setRedAlliance: (v: boolean) => void;
@@ -31,15 +31,9 @@ function ViewerHeader({
     <div className="viewer-header">
       {/* Command name */}
       <div className="vh-title">
-        {command ? (
-          <>
-            <span className="timeline-cmd-name">{command.name}</span>
-            {command.fullName !== command.name && (
-              <span className="timeline-cmd-full">{command.fullName}</span>
-            )}
-          </>
-        ) : (
-          <span className="timeline-cmd-name vh-placeholder">No command selected</span>
+        <span className="timeline-cmd-name">{command.name}</span>
+        {command.fullName !== command.name && (
+          <span className="timeline-cmd-full">{command.fullName}</span>
         )}
       </div>
 
@@ -120,6 +114,14 @@ export function Viewer({ command }: Props) {
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup',   onUp);
   }, []);
+
+  if (!command) {
+    return (
+      <div className="viewer viewer-empty">
+        <img src={`${import.meta.env.BASE_URL}Logo.Grey.png`} alt="" className="viewer-empty-logo" />
+      </div>
+    );
+  }
 
   const header = (
     <ViewerHeader

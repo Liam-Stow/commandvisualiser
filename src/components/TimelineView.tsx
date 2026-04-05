@@ -276,14 +276,7 @@ export function TimelineView({ command, zoom = 1.0, setZoom = () => {}, waypoint
     return map;
   }, [waypoints]);
 
-  if (!command) {
-    return (
-      <div className="timeline-view empty-panel">
-        <div className="empty-icon">📊</div>
-        <p>Select a command to visualise its flow.</p>
-      </div>
-    );
-  }
+  if (!command) return null;
 
   const layout = computeLayout(command.node);
   const PAD    = 16;

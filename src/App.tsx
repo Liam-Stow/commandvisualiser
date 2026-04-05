@@ -192,6 +192,7 @@ export default function App() {
   return (
     <div
       className="app-layout"
+      data-has-panel={selectedFile !== null ? 'true' : 'false'}
       style={{
         '--sidebar-w': `${sidebarWidth}px`,
         '--panel-w':   `${panelWidth}px`,
@@ -209,15 +210,19 @@ export default function App() {
         className="resize-handle"
         onMouseDown={e => startResize(e, setSidebarWidth, sidebarWidth)}
       />
-      <CommandPanel
-        file={selectedFile}
-        selectedCommand={selectedCommand}
-        onSelectCommand={handleSelectCommand}
-      />
-      <div
-        className="resize-handle"
-        onMouseDown={e => startResize(e, setPanelWidth, panelWidth)}
-      />
+      {selectedFile !== null && (
+        <>
+          <CommandPanel
+            file={selectedFile}
+            selectedCommand={selectedCommand}
+            onSelectCommand={handleSelectCommand}
+          />
+          <div
+            className="resize-handle"
+            onMouseDown={e => startResize(e, setPanelWidth, panelWidth)}
+          />
+        </>
+      )}
       <Viewer command={selectedCommand} />
     </div>
   );
