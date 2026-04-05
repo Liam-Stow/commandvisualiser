@@ -338,10 +338,6 @@ body {
   overflow: hidden;
 }
 
-.vh-placeholder {
-  opacity: 0.35;
-}
-
 .vh-divider {
   width: 1px;
   height: 18px;
