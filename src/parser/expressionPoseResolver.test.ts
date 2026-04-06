@@ -129,7 +129,7 @@ constexpr frc::Pose2d REAL{1_m, 2_m, 0_deg};
   });
 });
 
-// ─── buildExpressionPoseMap ────────��───────────────────────────────────────────────
+// ─── buildExpressionPoseMap ────────────────────────────────────────────
 
 describe('buildExpressionPoseMap', () => {
   it('keys by both qualified and short name', () => {

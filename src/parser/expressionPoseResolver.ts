@@ -19,11 +19,13 @@ export type ExpressionPoseMap = Map<string, Pose2dConstant>;
  * Scan comment-stripped C++ code for `frc::Pose2d` constant definitions and
  * return them with fully-qualified names (namespace::name).
  *
- * Supported patterns:
+ * Supported patterns (all arguments must be on the same line):
  *   constexpr frc::Pose2d NAME{x, y, rot};
  *   const     frc::Pose2d NAME(x, y, rot);
  *   inline constexpr auto NAME = frc::Pose2d{x, y, rot};
  *   static constexpr frc::Pose2d NAME{x, y, rot};
+ *
+ * Multi-line definitions (arguments split across lines) are not supported.
  */
 export function extractPose2dConstants(rawCode: string): Pose2dConstant[] {
   const code = removeComments(rawCode);
@@ -43,6 +45,11 @@ export function extractPose2dConstants(rawCode: string): Pose2dConstant[] {
     // Phase 1: Detect and push any namespace/class/struct scope openings.
     // We use a global regex to handle multiple scope openings on one line
     // (e.g. "} namespace b {") or closing-then-opening patterns.
+    // Note: a line like "} namespace b {" will push "b" with depth=0 here,
+    // then Phase 3 will decrement for "}" and increment for "{", reaching
+    // depth=0 — which correctly matches b's scopeDepth and would immediately
+    // pop it. In practice this pattern doesn't appear inside constant
+    // definitions, so it's benign; Pose2d constants must be on their own line.
     const scopeRe = /(?:namespace|class|struct)\s+(\w+)[^{]*\{/g;
     let scopeMatch: RegExpExecArray | null;
     while ((scopeMatch = scopeRe.exec(trimmed)) !== null) {

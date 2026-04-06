@@ -8,7 +8,7 @@ export type WaypointPose =
   | { kind: 'expression'; expression: string };
 
 export interface DriveWaypoint {
-  commandName: String;
+  commandName: string;
   pose: WaypointPose;
   speedScaling: number;
   posTolMeters: number;
