@@ -18,7 +18,7 @@ function newId(): string {
 
 // ─── Comment removal ───────────────────────────────────────────────────────────
 
-function removeComments(code: string): string {
+export function removeComments(code: string): string {
   let result = '';
   let i = 0;
   while (i < code.length) {

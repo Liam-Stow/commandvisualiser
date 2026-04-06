@@ -1,13 +1,14 @@
 import type { AnyCommandNode } from '../types/command';
+import type { ExpressionPoseMap } from './expressionPoseResolver';
 
 // ─── Output types ─────────────────────────────────────────────────────────────
 
 export type WaypointPose =
-  | { kind: 'literal'; x: number; y: number; rotation: number }
+  | { kind: 'literal'; x: number; y: number; rotation: number; resolvedFrom?: string }
   | { kind: 'expression'; expression: string };
 
 export interface DriveWaypoint {
-  commandName: String;
+  commandName: string;
   pose: WaypointPose;
   speedScaling: number;
   posTolMeters: number;
@@ -20,7 +21,7 @@ export interface DriveWaypoint {
 
 // ─── Unit parsing ─────────────────────────────────────────────────────────────
 
-function parseMeters(s: string): number {
+export function parseMeters(s: string): number {
   s = s.trim();
   const m   = s.match(/^([+-]?\d*\.?\d+)\s*_m$/);   if (m) return +m[1];
   const cm  = s.match(/^([+-]?\d*\.?\d+)\s*_cm$/);  if (cm) return +cm[1] / 100;
@@ -29,7 +30,7 @@ function parseMeters(s: string): number {
   return parseFloat(s) || 0;
 }
 
-function parseDeg(s: string): number {
+export function parseDeg(s: string): number {
   s = s.trim();
   const deg = s.match(/^([+-]?\d*\.?\d+)\s*_deg$/); if (deg) return +deg[1];
   const rad = s.match(/^([+-]?\d*\.?\d+)\s*_rad$/); if (rad) return +rad[1] * (180 / Math.PI);
@@ -37,9 +38,9 @@ function parseDeg(s: string): number {
   return parseFloat(s) || 0;
 }
 
-// ─── Balanced-bracket helpers (duplicated locally to avoid circular import) ───
+// ─── Balanced-bracket helpers ────────────────────────────────────────────────
 
-function splitTopLevel(str: string): string[] {
+export function splitTopLevel(str: string): string[] {
   const parts: string[] = [];
   let depth = 0, cur = '';
   for (const c of str) {
@@ -66,7 +67,7 @@ function getCallArgs(expr: string): string {
 
 // ─── Pose extraction ──────────────────────────────────────────────────────────
 
-function parsePoseArg(arg: string): WaypointPose {
+function parsePoseArg(arg: string, expressionPoseMap?: ExpressionPoseMap): WaypointPose {
   // frc::Pose2d{x, y, rot} — curly-brace constructor
   const braceMatch = arg.match(/frc::Pose2d\s*\{([^{}]+)\}/);
   if (braceMatch) {
@@ -95,23 +96,42 @@ function parsePoseArg(arg: string): WaypointPose {
     }
   }
 
+  // Try resolving named constant (e.g. fieldConstants::FRONT_LEFT)
+  // Also unwrap no-capture lambdas: [] { return fieldpos::FRONT_LEFT; }
+  if (expressionPoseMap) {
+    let expr = arg.trim();
+    const lambdaMatch = expr.match(/^\[.*?\]\s*\{\s*return\s+(.+?);\s*\}$/s);
+    if (lambdaMatch) expr = lambdaMatch[1].trim();
+    const key = expr.replace(/\s+/g, '');
+    const resolved = expressionPoseMap.get(key);
+    if (resolved) {
+      return {
+        kind: 'literal',
+        x: resolved.x,
+        y: resolved.y,
+        rotation: resolved.rotation,
+        resolvedFrom: resolved.qualifiedName,
+      };
+    }
+  }
+
   return { kind: 'expression', expression: arg.replace(/\s+/g, ' ').trim().slice(0, 40) };
 }
 
 // ─── DriveToPose call parser ──────────────────────────────────────────────────
 
-function parseDriveToPose(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
+function parseDriveToPose(raw: string, expressionPoseMap?: ExpressionPoseMap): Omit<DriveWaypoint, 'nodeId'> | null {
   const dtpIdx = raw.indexOf('DriveToPose(');
   if (dtpIdx === -1) return null;
 
   const argsStr = getCallArgs(raw.slice(dtpIdx + 'DriveToPose'.length));
   const args    = splitTopLevel(argsStr);
-  if (args.length < 2) return null;
+  if (args.length < 1) return null;
 
-  const pose = parsePoseArg(args[0]);
-  if (pose.kind !== 'literal') return null; // For simplicity, only handle literal poses for now
+  const pose = parsePoseArg(args[0], expressionPoseMap);
+  if (pose.kind !== 'literal') return null;
 
-  const speedScaling = parseFloat(args[1]) || 1.0;
+  const speedScaling = args[1] ? (parseFloat(args[1]) || 1.0) : 1.0;
   const posTolMeters = args[2] ? parseMeters(args[2]) : 0.02;
   const rotTolDeg    = args[3] ? parseDeg(args[3])    : 2.0;
   const flipForRed   = args[4] ? args[4].trim() !== 'false' : true;
@@ -121,31 +141,31 @@ function parseDriveToPose(raw: string): Omit<DriveWaypoint, 'nodeId'> | null {
 
 // ─── Tree walker ──────────────────────────────────────────────────────────────
 
-export function extractWaypoints(node: AnyCommandNode): DriveWaypoint[] {
+export function extractWaypoints(node: AnyCommandNode, expressionPoseMap?: ExpressionPoseMap): DriveWaypoint[] {
   switch (node.type) {
     case 'leaf': {
-      const dtp = parseDriveToPose(node.raw);
+      const dtp = parseDriveToPose(node.raw, expressionPoseMap);
       if (dtp) return [{ ...dtp, nodeId: node.id }];
       return [];
     }
 
     case 'sequence':
-      return node.children.flatMap(extractWaypoints);
+      return node.children.flatMap(c => extractWaypoints(c, expressionPoseMap));
 
     case 'parallel':
     case 'race':
-      return node.children.flatMap(extractWaypoints);
+      return node.children.flatMap(c => extractWaypoints(c, expressionPoseMap));
 
     case 'deadline':
-      return [node.deadline, ...node.others].flatMap(extractWaypoints);
+      return [node.deadline, ...node.others].flatMap(c => extractWaypoints(c, expressionPoseMap));
 
     case 'decorated':
-      return extractWaypoints(node.child);
+      return extractWaypoints(node.child, expressionPoseMap);
 
     case 'conditional':
       return [
-        ...extractWaypoints(node.trueBranch),
-        ...extractWaypoints(node.falseBranch),
+        ...extractWaypoints(node.trueBranch, expressionPoseMap),
+        ...extractWaypoints(node.falseBranch, expressionPoseMap),
       ];
 
     default:

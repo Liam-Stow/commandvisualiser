@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { CommandFunction } from '../types/command';
 import type { DriveWaypoint } from '../parser/driveToPoseParser';
+import type { ExpressionPoseMap } from '../parser/expressionPoseResolver';
 import { extractWaypoints } from '../parser/driveToPoseParser';
 import { TimelineView } from './TimelineView';
 import { FieldView } from './FieldView';
@@ -70,9 +71,10 @@ function ViewerHeader({
 
 interface Props {
   command: CommandFunction | null;
+  expressionPoseMap?: ExpressionPoseMap;
 }
 
-export function Viewer({ command }: Props) {
+export function Viewer({ command, expressionPoseMap }: Props) {
   const [hoveredWaypointIndex, setHoveredWaypointIndex] = useState<number | null>(null);
   const [fieldHeight, setFieldHeight] = useState(() => Math.round(window.innerHeight / 2));
   const fieldHeightRef = useRef(fieldHeight);
@@ -88,8 +90,8 @@ export function Viewer({ command }: Props) {
   const [zoom, setZoom] = useState(1.0);
 
   const waypoints: DriveWaypoint[] = useMemo(
-    () => command ? extractWaypoints(command.node) : [],
-    [command],
+    () => command ? extractWaypoints(command.node, expressionPoseMap) : [],
+    [command, expressionPoseMap],
   );
 
   const hasWaypoints = waypoints.length > 0;

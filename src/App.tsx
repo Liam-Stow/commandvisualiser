@@ -1,25 +1,33 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ParsedFile, CommandFunction } from './types/command';
 import { parseFile } from './parser/cppParser';
+import { extractPose2dConstants, buildExpressionPoseMap } from './parser/expressionPoseResolver';
+import type { ExpressionPoseMap, Pose2dConstant } from './parser/expressionPoseResolver';
 import { FileSidebar } from './components/FileSidebar';
 import { CommandPanel } from './components/CommandPanel';
 import { Viewer } from './components/Viewer';
 
 // ─── File system helpers ──────────────────────────────────────────────────────
 
-/** Recursively walk a directory, yielding handles for every .cpp file found. */
-async function* walkCppFiles(
+const SOURCE_EXTS = ['.cpp', '.h', '.hpp'];
+
+/** Recursively walk a directory, yielding handles for every C++ source/header file. */
+async function* walkSourceFiles(
   dir: FileSystemDirectoryHandle,
   basePath = '',
 ): AsyncGenerator<{ handle: FileSystemFileHandle; path: string }> {
   for await (const [name, entry] of dir) {
     const fullPath = basePath ? `${basePath}/${name}` : name;
-    if (entry.kind === 'file' && name.endsWith('.cpp')) {
+    if (entry.kind === 'file' && SOURCE_EXTS.some(ext => name.endsWith(ext))) {
       yield { handle: entry as FileSystemFileHandle, path: fullPath };
     } else if (entry.kind === 'directory') {
-      yield* walkCppFiles(entry as FileSystemDirectoryHandle, fullPath);
+      yield* walkSourceFiles(entry as FileSystemDirectoryHandle, fullPath);
     }
   }
+}
+
+function isHeaderFile(name: string): boolean {
+  return name.endsWith('.h') || name.endsWith('.hpp');
 }
 
 function sortFiles(files: ParsedFile[]): ParsedFile[] {
@@ -34,6 +42,40 @@ function sortFiles(files: ParsedFile[]): ParsedFile[] {
 
 export default function App() {
   const [files, setFiles] = useState<ParsedFile[]>([]);
+  const [expressionPoseMap, setExpressionPoseMap] = useState<ExpressionPoseMap>(new Map());
+
+  // Expose pose map on window for console debugging:
+  //   showExpressionPoses()                            — log all expression→pose mappings
+  //   showExpressionPoses('REEF')                      — filter by name substring
+  //   resolveExpressionPose('fieldConstants::FRONT') — check if a specific expression resolves
+  useEffect(() => {
+    (window as any).showExpressionPoses = (filter?: string) => {
+      const entries = [...expressionPoseMap.entries()]
+        .filter(([key]) => !filter || key.toLowerCase().includes(filter.toLowerCase()));
+      if (entries.length === 0) {
+        console.log(filter ? `No poses matching "${filter}"` : 'No Pose2d expressions found');
+        return;
+      }
+      console.table(
+        Object.fromEntries(entries.map(([key, c]) => [key, { x: c.x, y: c.y, rotation: c.rotation, qualifiedName: c.qualifiedName }])),
+      );
+    };
+    (window as any).resolveExpressionPose = (name: string) => {
+      const key = name.replace(/\s+/g, '');
+      const result = expressionPoseMap.get(key);
+      if (result) {
+        console.log(`✓ "${key}" resolves to:`, result);
+      } else {
+        console.warn(`✗ "${key}" not found in expression pose map`);
+        const nearby = [...expressionPoseMap.keys()].filter(k => k.toLowerCase().includes(key.split('::').pop()!.toLowerCase()));
+        if (nearby.length > 0) console.log('Similar keys:', nearby);
+      }
+    };
+    return () => {
+      delete (window as any).showExpressionPoses;
+      delete (window as any).resolveExpressionPose;
+    };
+  }, [expressionPoseMap]);
 
   // Store keys rather than object refs so views auto-update when files change.
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
@@ -44,6 +86,9 @@ export default function App() {
 
   // Map<filePath, lastModified> — used by the poll loop to detect changes.
   const lastModifiedRef = useRef<Map<string, number>>(new Map());
+  // Map<filePath, Pose2dConstant[]> — per-file pose cache; avoids re-reading
+  // all files when only one changes during polling.
+  const posesByFileRef = useRef<Map<string, Pose2dConstant[]>>(new Map());
   // Guard against concurrent poll invocations.
   const pollingRef = useRef(false);
 
@@ -60,17 +105,22 @@ export default function App() {
   // ── Initial full load from a FileSystemDirectoryHandle ──────────────────────
   const loadFromHandle = useCallback(async (handle: FileSystemDirectoryHandle) => {
     lastModifiedRef.current.clear();
+    posesByFileRef.current.clear();
     const parsed: ParsedFile[] = [];
-    for await (const { handle: fh, path } of walkCppFiles(handle)) {
+    for await (const { handle: fh, path } of walkSourceFiles(handle)) {
       try {
         const file = await fh.getFile();
         lastModifiedRef.current.set(path, file.lastModified);
         const code = await file.text();
-        const result = parseFile(file.name, path, code);
-        if (result.functions.length > 0) parsed.push(result);
+        posesByFileRef.current.set(path, extractPose2dConstants(code));
+        if (!isHeaderFile(file.name)) {
+          const result = parseFile(file.name, path, code);
+          if (result.functions.length > 0) parsed.push(result);
+        }
       } catch { /* skip unreadable files */ }
     }
     setFiles(sortFiles(parsed));
+    setExpressionPoseMap(buildExpressionPoseMap([...posesByFileRef.current.values()].flat()));
     setSelectedFilePath(null);
     setSelectedCommandName(null);
   }, []);
@@ -93,16 +143,21 @@ export default function App() {
     setDirHandle(null);
     setWatching(false);
     lastModifiedRef.current.clear();
+    posesByFileRef.current.clear();
     const parsed: ParsedFile[] = [];
-    for (const file of Array.from(fileList).filter(f => f.name.endsWith('.cpp'))) {
+    for (const file of Array.from(fileList).filter(f => SOURCE_EXTS.some(ext => f.name.endsWith(ext)))) {
       try {
         const path = (file as File & { webkitRelativePath: string }).webkitRelativePath || file.name;
         const code = await file.text();
-        const result = parseFile(file.name, path, code);
-        if (result.functions.length > 0) parsed.push(result);
+        posesByFileRef.current.set(path, extractPose2dConstants(code));
+        if (!isHeaderFile(file.name)) {
+          const result = parseFile(file.name, path, code);
+          if (result.functions.length > 0) parsed.push(result);
+        }
       } catch { /* skip */ }
     }
     setFiles(sortFiles(parsed));
+    setExpressionPoseMap(buildExpressionPoseMap([...posesByFileRef.current.values()].flat()));
     setSelectedFilePath(null);
     setSelectedCommandName(null);
   }, []);
@@ -116,8 +171,9 @@ export default function App() {
       pollingRef.current = true;
       try {
         const updates: { path: string; parsed: ParsedFile | null }[] = [];
+        let constantsChanged = false;
 
-        for await (const { handle, path } of walkCppFiles(dirHandle)) {
+        for await (const { handle, path } of walkSourceFiles(dirHandle)) {
           const file = await handle.getFile();
           const prev = lastModifiedRef.current.get(path) ?? 0;
           if (file.lastModified === prev) continue;
@@ -125,10 +181,18 @@ export default function App() {
           lastModifiedRef.current.set(path, file.lastModified);
           try {
             const code = await file.text();
-            const result = parseFile(file.name, path, code);
-            updates.push({ path, parsed: result.functions.length > 0 ? result : null });
+            posesByFileRef.current.set(path, extractPose2dConstants(code));
+            constantsChanged = true;
+            if (!isHeaderFile(file.name)) {
+              const result = parseFile(file.name, path, code);
+              updates.push({ path, parsed: result.functions.length > 0 ? result : null });
+            }
           } catch {
-            updates.push({ path, parsed: null });
+            posesByFileRef.current.delete(path);
+            constantsChanged = true;
+            if (!isHeaderFile(file.name)) {
+              updates.push({ path, parsed: null });
+            }
           }
         }
 
@@ -140,6 +204,10 @@ export default function App() {
                 .concat(updates.flatMap(u => (u.parsed ? [u.parsed] : []))),
             ),
           );
+        }
+
+        if (constantsChanged) {
+          setExpressionPoseMap(buildExpressionPoseMap([...posesByFileRef.current.values()].flat()));
         }
       } finally {
         pollingRef.current = false;
@@ -223,7 +291,7 @@ export default function App() {
           />
         </>
       )}
-      <Viewer command={selectedCommand} />
+      <Viewer command={selectedCommand} expressionPoseMap={expressionPoseMap} />
     </div>
   );
 }
