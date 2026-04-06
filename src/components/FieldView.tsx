@@ -48,9 +48,8 @@ function applyAllianceFlip(wp: DriveWaypoint, redAlliance: boolean, cfg: FieldCo
   return {
     ...wp,
     pose: {
-      kind: 'literal',
+      ...pose,
       x: flipXForRed(cfg, pose.x),
-      y: pose.y,
       rotation: flipRotForRed(pose.rotation),
     },
   };
