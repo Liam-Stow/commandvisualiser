@@ -20,6 +20,7 @@ function commandHasPoses(node: AnyCommandNode): boolean {
     case 'decorated':
       return commandHasPoses(node.child);
     case 'leaf':
+    case 'unknown':
     default:
       return node.raw.includes('DriveToPose(');
   }
