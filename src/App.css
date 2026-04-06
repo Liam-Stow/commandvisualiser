@@ -276,21 +276,12 @@ body {
 }
 
 .cmd-badge {
-  font-size: 9px;
-  font-weight: 700;
-  font-family: monospace;
-  padding: 2px 5px;
-  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
   flex-shrink: 0;
-  letter-spacing: 0.04em;
 }
-
-.badge-seq      { background: #1e3a8a; color: #bfdbfe; }
-.badge-par      { background: #14532d; color: #bbf7d0; }
-.badge-race     { background: #7c2d12; color: #fed7aa; }
-.badge-deadline { background: #43116f; color: #e9d5ff; }
-.badge-cond     { background: #78350f; color: #fde68a; }
-.badge-leaf     { background: #1e293b; color: #94a3b8; }
 
 .cmd-name {
   flex: 1;

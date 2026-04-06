@@ -1,4 +1,5 @@
 import type { AnyCommandNode, CommandFunction, ParsedFile } from '../types/command';
+import { LightningIcon, NavArrowIcon } from './Icons';
 
 interface Props {
   file: ParsedFile;
@@ -6,29 +7,24 @@ interface Props {
   onSelectCommand: (cmd: CommandFunction) => void;
 }
 
-function commandTypePreview(cmd: CommandFunction): string {
-  switch (cmd.node.type) {
-    case 'sequence':    return 'SEQ';
-    case 'parallel':    return 'PAR';
-    case 'race':        return 'RACE';
-    case 'deadline':    return 'DEADLINE';
-    case 'decorated':   return cmd.node.decorator.toUpperCase();
-    case 'conditional': return 'IF/ELSE';
-    case 'leaf':        return 'CMD';
-    default:            return '?';
+function commandHasPoses(node: AnyCommandNode): boolean {
+  switch (node.type) {
+    case 'sequence':
+    case 'parallel':
+    case 'race':
+      return node.children.some(commandHasPoses);
+    case 'deadline':
+      return commandHasPoses(node.deadline) || node.others.some(commandHasPoses);
+    case 'conditional':
+      return commandHasPoses(node.trueBranch) || commandHasPoses(node.falseBranch);
+    case 'decorated':
+      return commandHasPoses(node.child);
+    case 'leaf':
+    default:
+      return node.raw.includes('DriveToPose(');
   }
 }
 
-function commandTypeClass(cmd: CommandFunction): string {
-  switch (cmd.node.type) {
-    case 'sequence':    return 'badge-seq';
-    case 'parallel':    return 'badge-par';
-    case 'race':        return 'badge-race';
-    case 'deadline':    return 'badge-deadline';
-    case 'conditional': return 'badge-cond';
-    default:            return 'badge-leaf';
-  }
-}
 
 function leafNodeCount(node: AnyCommandNode): number {
   switch (node.type) {
@@ -68,16 +64,17 @@ export function CommandPanel({ file, selectedCommand, onSelectCommand }: Props) 
       </div>
       <div className="command-list">
         {file.functions.map(cmd => {
-          const active = selectedCommand?.fullName === cmd.fullName && selectedCommand?.name === cmd.name;
-          const count  = leafNodeCount(cmd.node);
+          const active   = selectedCommand?.fullName === cmd.fullName && selectedCommand?.name === cmd.name;
+          const count    = leafNodeCount(cmd.node);
+          const hasPoses = commandHasPoses(cmd.node);
           return (
             <button
               key={cmd.fullName + cmd.name}
               className={`command-item ${active ? 'active' : ''}`}
               onClick={() => onSelectCommand(cmd)}
             >
-              <span className={`cmd-badge ${commandTypeClass(cmd)}`}>
-                {commandTypePreview(cmd)}
+              <span className="cmd-badge">
+                {hasPoses ? <NavArrowIcon /> : <LightningIcon />}
               </span>
               <span className="cmd-name">{cmd.name}</span>
               <span className="cmd-children" title={`${count} leaf command${count !== 1 ? 's' : ''}`}>

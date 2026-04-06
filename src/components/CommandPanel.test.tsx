@@ -81,59 +81,56 @@ describe('command list', () => {
   });
 });
 
-// ─── Type badges ──────────────────────────────────────────────────────────────
+// ─── Pose indicator icons ─────────────────────────────────────────────────────
 
-describe('type badges', () => {
-  it('shows SEQ badge for sequence', () => {
+const drivePose = (id: string): AnyCommandNode => ({
+  type: 'leaf', id, name: 'DriveToPose()', raw: 'sub.DriveToPose(pose)',
+});
+
+describe('pose indicator icons', () => {
+  it('shows lightning icon for a command with no poses', () => {
     const file = makeFile([makeCmd('MySeq', seq(leaf('a'), leaf('b')))]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('SEQ')).toBeTruthy();
+    expect(document.querySelector('[data-testid="icon-lightning"]')).toBeTruthy();
+    expect(document.querySelector('[data-testid="icon-nav-arrow"]')).toBeNull();
   });
 
-  it('shows PAR badge for parallel', () => {
-    const file = makeFile([makeCmd('MyPar', par(leaf('a'), leaf('b')))]);
+  it('shows nav arrow icon for a command containing a DriveToPose leaf', () => {
+    const file = makeFile([makeCmd('MyAuto', seq(leaf('a'), drivePose('dp')))]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('PAR')).toBeTruthy();
+    expect(document.querySelector('[data-testid="icon-nav-arrow"]')).toBeTruthy();
+    expect(document.querySelector('[data-testid="icon-lightning"]')).toBeNull();
   });
 
-  it('shows RACE badge for race', () => {
-    const file = makeFile([makeCmd('MyRace', race(leaf('a'), leaf('b')))]);
+  it('shows lightning for commands without poses and nav arrow for commands with poses', () => {
+    const file = makeFile([
+      makeCmd('NoPoses', seq(leaf('a'), leaf('b'))),
+      makeCmd('HasPoses', seq(leaf('c'), drivePose('dp'))),
+    ]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('RACE')).toBeTruthy();
+    expect(document.querySelectorAll('[data-testid="icon-lightning"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-testid="icon-nav-arrow"]')).toHaveLength(1);
   });
 
-  it('shows DEADLINE badge for deadline', () => {
-    const node: AnyCommandNode = { type: 'deadline', id: 'd', deadline: leaf('a'), others: [leaf('b')] };
-    const file = makeFile([makeCmd('MyDeadline', node)]);
+  it('detects poses nested inside decorated nodes', () => {
+    const node: AnyCommandNode = { type: 'decorated', id: 'dec', decorator: 'timeout', child: drivePose('dp') };
+    const file = makeFile([makeCmd('Decorated', node)]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('DEADLINE')).toBeTruthy();
+    expect(document.querySelector('[data-testid="icon-nav-arrow"]')).toBeTruthy();
   });
 
-  it('shows IF/ELSE badge for conditional', () => {
-    const node: AnyCommandNode = {
-      type: 'conditional', id: 'c',
-      trueBranch: leaf('t'), falseBranch: leaf('f'),
-    };
-    const file = makeFile([makeCmd('MyCond', node)]);
+  it('detects poses inside deadline nodes', () => {
+    const node: AnyCommandNode = { type: 'deadline', id: 'd', deadline: drivePose('dp'), others: [leaf('a')] };
+    const file = makeFile([makeCmd('Deadline', node)]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('IF/ELSE')).toBeTruthy();
+    expect(document.querySelector('[data-testid="icon-nav-arrow"]')).toBeTruthy();
   });
 
-  it('shows CMD badge for leaf', () => {
-    const file = makeFile([makeCmd('MyLeaf', leaf('a'))]);
+  it('detects poses inside conditional branches', () => {
+    const node: AnyCommandNode = { type: 'conditional', id: 'c', trueBranch: drivePose('dp'), falseBranch: leaf('f') };
+    const file = makeFile([makeCmd('Cond', node)]);
     render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('CMD')).toBeTruthy();
-  });
-
-  it('shows decorator name uppercased for decorated nodes', () => {
-    const node: AnyCommandNode = {
-      type: 'decorated', id: 'dec',
-      decorator: 'timeout',
-      child: leaf('a'),
-    };
-    const file = makeFile([makeCmd('MyTimeout', node)]);
-    render(<CommandPanel file={file} selectedCommand={null} onSelectCommand={() => {}} />);
-    expect(screen.getByText('TIMEOUT')).toBeTruthy();
+    expect(document.querySelector('[data-testid="icon-nav-arrow"]')).toBeTruthy();
   });
 });
 
