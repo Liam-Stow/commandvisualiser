@@ -222,7 +222,7 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showPosTolerance
           style={{ pointerEvents: 'none' }}
         />
       )}
-      {showRotTolerance && isFinite(arrowX) && isFinite(arrowY) && (
+      {isFinite(arrowX) && isFinite(arrowY) && (
         <>
           <line
             x1={ix} y1={iy} x2={arrowX} y2={arrowY}
