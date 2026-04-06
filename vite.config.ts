@@ -16,7 +16,7 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'favicon.png',
+            src: 'Logo.Shadow.png',
             sizes: '512x512',
             type: 'image/png',
           },
