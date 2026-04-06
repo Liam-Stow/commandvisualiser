@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { extractWaypoints } from './driveToPoseParser';
+import { buildExpressionPoseMap } from './expressionPoseResolver';
+import type { Pose2dConstant } from './expressionPoseResolver';
 import type {
   AnyCommandNode,
   LeafNode,
@@ -279,5 +281,113 @@ describe('tree walking', () => {
     );
     const wp = extractWaypoints(node);
     expect(wp).toHaveLength(3);
+  });
+});
+
+// ─── Constant resolution ─────────────────────────────────────────────────────
+
+describe('expression pose resolution', () => {
+  const poses: Pose2dConstant[] = [
+    { x: 1.5, y: 2.0, rotation: 90, qualifiedName: 'fieldConstants::FRONT_LEFT' },
+    { x: 3.0, y: 1.0, rotation: 0,  qualifiedName: 'fieldConstants::SCORING_POS' },
+    { x: 5.0, y: 5.0, rotation: 45, qualifiedName: 'UNIQUE_POSE' },
+  ];
+  const expressionPoseMap = buildExpressionPoseMap(poses);
+
+  it('resolves fully-qualified constant name', () => {
+    const node = driveToPose('fieldConstants::FRONT_LEFT');
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(1);
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.x).toBeCloseTo(1.5);
+      expect(wp[0].pose.y).toBeCloseTo(2.0);
+      expect(wp[0].pose.rotation).toBeCloseTo(90);
+      expect(wp[0].pose.resolvedFrom).toBe('fieldConstants::FRONT_LEFT');
+    }
+  });
+
+  it('resolves short (unqualified) constant name', () => {
+    const node = driveToPose('UNIQUE_POSE');
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(1);
+    expect(wp[0].pose.kind).toBe('literal');
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.x).toBeCloseTo(5.0);
+      expect(wp[0].pose.resolvedFrom).toBe('UNIQUE_POSE');
+    }
+  });
+
+  it('still returns empty for unresolvable expression without constant map', () => {
+    const node = driveToPose('fieldConstants::FRONT_LEFT');
+    const wp = extractWaypoints(node);
+    expect(wp).toHaveLength(0);
+  });
+
+  it('resolves lambda-wrapped constant: [] { return ns::NAME; }', () => {
+    const raw = `SubDrivebase::GetInstance().DriveToPose([] { return fieldConstants::FRONT_LEFT; }, 1.0, 20_cm)`;
+    const node = leaf(raw, 'DriveToPose()');
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(1);
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.x).toBeCloseTo(1.5);
+      expect(wp[0].pose.resolvedFrom).toBe('fieldConstants::FRONT_LEFT');
+    }
+  });
+
+  it('resolves with only a pose arg (no speed arg)', () => {
+    // DriveToPose(fieldConstants::FRONT_LEFT) — speed omitted, defaults to 1.0
+    const node = leaf(`SubDrivebase::GetInstance().DriveToPose(fieldConstants::FRONT_LEFT)`, 'DriveToPose()');
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(1);
+    expect(wp[0].speedScaling).toBeCloseTo(1.0);
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.resolvedFrom).toBe('fieldConstants::FRONT_LEFT');
+    }
+  });
+
+  it('still returns empty for unknown constants', () => {
+    const node = driveToPose('fieldConstants::DOES_NOT_EXIST');
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(0);
+  });
+
+  it('prefers literal Pose2d over constant map lookup', () => {
+    // If the arg is a literal Pose2d, it should be used even if the constant map has a match
+    const node = driveToPose('frc::Pose2d{9_m, 9_m, 9_deg}');
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(1);
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.x).toBeCloseTo(9);
+      expect(wp[0].pose.resolvedFrom).toBeUndefined();
+    }
+  });
+
+  it('reads speed/tolerance/flip from remaining args when resolving constant', () => {
+    const node = driveToPose('fieldConstants::SCORING_POS', '0.5', '3_cm', '5_deg', 'false');
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(1);
+    expect(wp[0].speedScaling).toBeCloseTo(0.5);
+    expect(wp[0].posTolMeters).toBeCloseTo(0.03);
+    expect(wp[0].rotTolDeg).toBeCloseTo(5.0);
+    expect(wp[0].flipForRed).toBe(false);
+  });
+
+  it('threads constant map through tree walking', () => {
+    const node = seq(
+      driveToPose('fieldConstants::FRONT_LEFT'),
+      leaf('SubShooter::GetInstance().Shoot()'),
+      driveToPose('frc::Pose2d{1_m, 0_m, 0_deg}'),
+    );
+    const wp = extractWaypoints(node, expressionPoseMap);
+    expect(wp).toHaveLength(2);
+    // First waypoint resolved from constant
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.resolvedFrom).toBe('fieldConstants::FRONT_LEFT');
+    }
+    // Second waypoint is inline literal
+    if (wp[1].pose.kind === 'literal') {
+      expect(wp[1].pose.resolvedFrom).toBeUndefined();
+    }
   });
 });

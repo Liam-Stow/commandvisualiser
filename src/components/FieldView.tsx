@@ -422,6 +422,9 @@ function WaypointTooltip({ wp, x, y }: { wp: DriveWaypoint; x: number; y: number
       {pose.kind === 'literal' ? (
         <table className="fwt-table">
           <tbody>
+            {pose.resolvedFrom && (
+              <tr><td colSpan={2} style={{ color: '#94a3b8', fontStyle: 'italic', paddingBottom: 2 }}>{pose.resolvedFrom}</td></tr>
+            )}
             <tr><td>X</td><td>{pose.x.toFixed(3)} m</td></tr>
             <tr><td>Y</td><td>{pose.y.toFixed(3)} m</td></tr>
             <tr><td>θ</td><td>{pose.rotation.toFixed(1)}°</td></tr>
