@@ -19,6 +19,7 @@ export const L_LEAF_H   = 46;    // leaf height
 export const L_HEADER_H = 22;    // group / decorator header strip height
 export const L_PAD      = 7;     // space between a group's border and its children
 export const L_GAP      = 5;     // space between sibling children
+export const L_DEADLINE_DIV_GAP = 14;   // space between deadline child and subordinates (room for divider line)
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 
@@ -86,9 +87,9 @@ export function computeLayout(node: AnyCommandNode, x = 0, y = 0): LayoutNode {
     case 'deadline': {
       const allNodes = [node.deadline, ...node.others];
       let curY = y + L_HEADER_H + L_PAD;
-      const children = allNodes.map(c => {
+      const children = allNodes.map((c, i) => {
         const child = computeLayout(c, x + L_PAD, curY);
-        curY += child.height + L_GAP;
+        curY += child.height + (i === 0 ? L_DEADLINE_DIV_GAP : L_GAP);
         return child;
       });
       const w = L_PAD + Math.max(...children.map(c => c.width)) + L_PAD;

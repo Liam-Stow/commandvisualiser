@@ -3,7 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type { CommandFunction, DecoratedNode } from '../types/command';
 import type { LayoutNode } from '../utils/layout';
 import type { DriveWaypoint } from '../parser/driveToPoseParser';
-import { computeLayout, L_HEADER_H } from '../utils/layout';
+import { computeLayout, L_HEADER_H, L_DEADLINE_DIV_GAP } from '../utils/layout';
 
 // ─── Group type styles ────────────────────────────────────────────────────────
 
@@ -212,14 +212,13 @@ function RenderNode({
 
       {command.type === 'deadline' && children.length > 1 && (() => {
         const c0 = children[0];
-        const divY = (c0.y + c0.height) * zoom + 3;
+        const divY = (c0.y + c0.height) * zoom + (L_DEADLINE_DIV_GAP / 2) * zoom;
         return (
           <line
-            x1={gx + 4} y1={divY} x2={gx + gw - 4} y2={divY}
+            x1={gx + 8} y1={divY} x2={gx + gw - 8} y2={divY}
             stroke={style.border}
-            strokeWidth={1}
-            strokeDasharray="4 3"
-            opacity={0.5}
+            strokeWidth={2}
+            strokeDasharray="6 4"
           />
         );
       })()}
