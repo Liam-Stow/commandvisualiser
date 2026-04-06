@@ -32,8 +32,8 @@ export function FolderIcon() {
 
 export function NavArrowIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-      <path fill="currentColor" fill-rule="evenodd" d="M11.6 4a.42.42 0 0 1 .252.1l.022.02l.02.025a.4.4 0 0 1 .053.075a.42.42 0 0 1 .016.356l-2.11 5.05l-.04.073a.43.43 0 0 1-.19.156l-5.05 2.11l-.06.02a.42.42 0 0 1-.35-.069l-.046-.04a.42.42 0 0 1-.11-.396l.021-.06l2.11-5.05a.43.43 0 0 1 .229-.23l5.05-2.11A.4.4 0 0 1 11.6 4M8 7a1 1 0 1 0 .001 2.001A1 1 0 0 0 8 7" clip-rule="evenodd"/>
+    <svg width="11" height="11" viewBox="3 3 10 10" fill="currentColor" aria-hidden data-testid="icon-nav-arrow">
+      <path fillRule="evenodd" d="M11.6 4a.42.42 0 0 1 .252.1l.022.02l.02.025a.4.4 0 0 1 .053.075a.42.42 0 0 1 .016.356l-2.11 5.05l-.04.073a.43.43 0 0 1-.19.156l-5.05 2.11l-.06.02a.42.42 0 0 1-.35-.069l-.046-.04a.42.42 0 0 1-.11-.396l.021-.06l2.11-5.05a.43.43 0 0 1 .229-.23l5.05-2.11A.4.4 0 0 1 11.6 4M8 7a1 1 0 1 0 .001 2.001A1 1 0 0 0 8 7" clipRule="evenodd"/>
     </svg>
   );
 }
