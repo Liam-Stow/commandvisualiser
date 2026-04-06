@@ -13,65 +13,8 @@ npm run build      # type-check + production build
 > `node ./node_modules/vite/bin/vite.js`
 > (npm/.bin shims don't work with the preview tool on Windows)
 
-## Architecture
-
-```
-C++ source file
-      │
-      ├─────────────────────────────────────────────────┐
-      ▼                                                 ▼
-src/parser/cppParser.ts                  src/parser/driveToPoseParser.ts
-ParsedFile[] (AST of CommandPtr fns)     DriveWaypoint[] (driveToPose calls)
-      │                                                 │
-      ▼                                                 ▼
-src/utils/layout.ts                      src/components/FieldView.tsx
-LayoutNode tree (x/y/width/height)       waypoints overlaid on field image
-      │                                                 │
-      ▼                                                 ▼
-src/components/TimelineView.tsx          src/config/fields.ts
-SVG timeline diagram                     field image metadata (px/m, margins)
-```
-
-Both views are shown side-by-side in `src/components/Viewer.tsx`.
-Hovering a `driveToPose` leaf in the timeline highlights the corresponding
-waypoint in the field view (and vice versa) via a shared `driveNodeMap`.
-
-## AST node types
-
-| Type | Meaning |
-|------|---------|
-| `sequence` | Commands run one after another |
-| `parallel` | All commands run; ends when all finish |
-| `race` | All commands run; ends when first finishes |
-| `deadline` | Like race but one command is the designated "deadline" |
-| `decorated` | Wrapper (timeout, repeatedly, until, onlyIf, …) |
-| `conditional` | Either/ConditionalCommand — true/false branches |
-| `leaf` | A concrete subsystem command, or WPILib command factory |
-| `unknown` | Unparseable expression, stored as raw string |
-
-## Colour scheme (TimelineView)
-
-| Node | Border | Header bg |
-|------|--------|-----------|
-| sequence | `#3b82f6` | `#1e40af` |
-| parallel | `#22c55e` | `#15803d` |
-| race | `#f97316` | `#c2410c` |
-| deadline | `#552b7c` | `#441270` |
-| decorated | `#64748b` | `#334155` |
-| conditional | `#f59e0b` | `#92400e` |
-
-Group body fill: `#0f172a`.
-
-## Layout constants (layout.ts)
-
-All values are px at zoom=1:
-- `L_LEAF_W = 150`, `L_LEAF_H = 46`
-- `L_HEADER_H = 22` (group header strip)
-- `L_PAD = 7` (border → children gap)
-- `L_GAP = 5` (gap between siblings)
 
 ## Parser scope
-
 The parser handles FRC C++ `frc2::CommandPtr`-returning functions. Supported patterns:
 - All `frc2::cmd::` factories (`Sequence`, `Parallel`, `Race`, `Deadline`, etc.)
 - Method-chain decorators: `AndThen`, `AlongWith`, `RaceWith`, `DeadlineFor`,
@@ -83,7 +26,16 @@ The parser handles FRC C++ `frc2::CommandPtr`-returning functions. Supported pat
 The parser does **not** execute or simulate C++ — it pattern-matches method chains
 and factory calls. Lambdas and complex expressions become `unknown` nodes.
 
+## Naming
+- Posititions on the field that include x/y translation and oritentiaion should always be referred to as a "Pose", "Pose2D" or similar. Not "Waypoint" or "Line".
+- Poses have two kinds: literal (values defined inline with the command that uses them), or expression (some code interpretation needed to get the value, such as going to a variable definition or running dynamic calculations).
+- Commands are always called commands. Not "Nodes" or "Actions". Sometimes using the word "Node" is appropriate for recording infomation that includes a command, but is not itself a command (ie, in the context of an Abstract Syntax Tree).
+
 ## Design constraints
 - Must work as a **static web app** with no backend — students open `index.html` directly.
 - No runtime dependencies beyond React; keep the bundle small.
 - Dark theme throughout; do not introduce light-mode styles.
+
+## Workflow
+- Unless changes are very minimal in scope (a few lines) and low-risk, make all new changes on branches so they can be reviewed.
+- No need for branch prefixes like "feature/" or "fix/", just describe the change. eg "empty-panel-rework", "pwa-support".
