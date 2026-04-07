@@ -338,26 +338,19 @@ function PickerMarker({ pose, rotation, cfg, scale, nearCursor }: PickerMarkerPr
   const arrowLen = 32 / scale;
   const ax = px + arrowLen * Math.cos(rotRad);
   const ay = py - arrowLen * Math.sin(rotRad);
-  // Dashed hover ring shows the scroll-to-rotate activation radius.
-  const hoverR = PICKER_ROTATE_RADIUS_PX / scale;
+  // Shorten the line so it ends near the arrowhead base, not the tip.
+  const headSize = (nearCursor ? 10 : 7) / scale;
+  const baseOffset = headSize * 0.5;
+  const lx = ax - baseOffset * Math.cos(rotRad);
+  const ly = ay + baseOffset * Math.sin(rotRad);
   return (
     <g style={{ pointerEvents: 'none' }}>
-      {nearCursor && (
-        <circle
-          cx={px} cy={py} r={hoverR}
-          fill="none"
-          stroke="#fbbf24"
-          strokeWidth={1 / scale}
-          strokeDasharray={`${5 / scale} ${4 / scale}`}
-          opacity={0.45}
-        />
-      )}
       <line x1={px - arm} y1={py} x2={px + arm} y2={py} stroke="#fbbf24" strokeWidth={1.5 / scale} />
       <line x1={px} y1={py - arm} x2={px} y2={py + arm} stroke="#fbbf24" strokeWidth={1.5 / scale} />
       <circle cx={px} cy={py} r={R} fill="rgba(251,191,36,0.15)" stroke="#fbbf24" strokeWidth={2 / scale} />
-      {/* Arrow brightens when cursor is near to hint at scroll-to-rotate */}
-      <line x1={px} y1={py} x2={ax} y2={ay} stroke={nearCursor ? '#fff' : '#fbbf24'} strokeWidth={(nearCursor ? 2.5 : 2) / scale} />
-      <polygon points={arrowHeadPoints(px, py, ax, ay, 7 / scale)} fill={nearCursor ? '#fff' : '#fbbf24'} />
+      {/* Arrow brightens and thickens when cursor is near to hint at scroll-to-rotate */}
+      <line x1={px} y1={py} x2={lx} y2={ly} stroke={nearCursor ? '#fff' : '#fbbf24'} strokeWidth={(nearCursor ? 4 : 2) / scale} />
+      <polygon points={arrowHeadPoints(px, py, ax, ay, headSize)} fill={nearCursor ? '#fff' : '#fbbf24'} />
     </g>
   );
 }
