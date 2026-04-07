@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback } from 'react';
 import type { CommandFunction } from '../types/command';
 import type { DriveWaypoint, WaypointPose } from '../parser/driveToPoseParser';
 import {
@@ -503,7 +503,7 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
     setPan({ x: f.x, y: f.y });
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
 
