@@ -171,7 +171,7 @@ interface MarkerProps {
   ghost: boolean;
   showPosTolerance: boolean;
   showRotTolerance: boolean;
-  onHover: (i: number | null) => void;
+  onHover: (i: number | null, e?: React.MouseEvent) => void;
 }
 
 function WaypointMarker({ wp, index, cfg, scale, active, ghost, showPosTolerance, showRotTolerance, onHover }: MarkerProps) {
@@ -244,7 +244,7 @@ function WaypointMarker({ wp, index, cfg, scale, active, ghost, showPosTolerance
         fill={color}
         stroke={active ? '#fff' : 'rgba(0,0,0,0.45)'}
         strokeWidth={(active ? 2 : 1.5) / scale}
-        onMouseEnter={() => onHover(index)}
+        onMouseEnter={(e) => onHover(index, e)}
         onMouseLeave={() => onHover(null)}
       />
       <text
@@ -617,10 +617,15 @@ export function FieldView({ command, waypoints: rawWaypoints, hoveredIndex, onHo
   // Stable callback: suppress hover only while actively dragging, not after.
   // Also tracks fieldHoveredIndex so the tooltip only shows when the mouse is
   // actually over the field viewport (not when driven by timeline cross-highlight).
-  const handleWaypointHover = useCallback((i: number | null) => {
+  const handleWaypointHover = useCallback((i: number | null, e?: React.MouseEvent) => {
     if (!isDragging.current) {
       onHoverIndex(i);
       setFieldHoveredIndex(i);
+      // Set position immediately on enter so the tooltip doesn't flash at the
+      // stale previous position before the first mousemove fires.
+      if (i !== null && e) {
+        setMousePos({ x: e.clientX + 16, y: e.clientY + 8 });
+      }
     }
   }, [onHoverIndex]);
 
