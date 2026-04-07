@@ -150,6 +150,7 @@ export function Viewer({ command, expressionPoseMap }: Props) {
       {header}
       <div className="viewer-field-pane" style={{ height: fieldHeight }}>
         <FieldView
+          key={command.fullName}
           command={command}
           waypoints={waypoints}
           hoveredIndex={hoveredWaypointIndex}
