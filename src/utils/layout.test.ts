@@ -6,6 +6,7 @@ import {
   L_HEADER_H,
   L_PAD,
   L_GAP,
+  L_DEADLINE_DIV_GAP,
 } from './layout';
 import type {
   AnyCommandNode,
@@ -206,7 +207,7 @@ describe('deadline layout', () => {
     };
     const layout = computeLayout(node);
     expect(layout.children).toHaveLength(2);
-    expect(layout.height).toBe(L_HEADER_H + L_PAD + L_LEAF_H + L_GAP + L_LEAF_H + L_PAD);
+    expect(layout.height).toBe(L_HEADER_H + L_PAD + L_LEAF_H + L_DEADLINE_DIV_GAP + L_LEAF_H + L_PAD);
   });
 
   it('deadlineChildIndex is always 0', () => {
