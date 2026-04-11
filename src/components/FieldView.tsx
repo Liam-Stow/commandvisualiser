@@ -271,8 +271,7 @@ interface PathLinesProps {
 function PathLines({ waypoints, rangeStart, rangeEnd, cfg, scale, showSpeed }: PathLinesProps) {
   const lines: React.ReactNode[] = [];
 
-  for (let i = 1; i < waypoints.length; i++) {
-    if (i < rangeStart || i > rangeEnd) continue;
+  for (let i = rangeStart + 1; i <= rangeEnd; i++) {
     const prev = waypoints[i - 1].pose;
     const curr = waypoints[i].pose;
     if (prev.kind !== 'literal' || curr.kind !== 'literal') continue;
