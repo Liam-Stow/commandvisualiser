@@ -2,9 +2,9 @@
 
 A browser-based tool for visualising FRC C++ command compositions — live at **https://liam-stow.github.io/commandvisualiser/**
 
-<img src="docs/readme_image_1.png" width="320">
 <img src="docs/readme_image_2.png" width="320">
 <img src="docs/readme_image_3.png" width="320">
+<img src="docs/readme_image_1.png" width="320">
 
 ## What it does
 
