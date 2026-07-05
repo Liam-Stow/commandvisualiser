@@ -118,54 +118,106 @@ function parsePoseArg(arg: string, expressionPoseMap?: ExpressionPoseMap): Waypo
   return { kind: 'expression', expression: arg.replace(/\s+/g, ' ').trim().slice(0, 40) };
 }
 
-// ─── DriveToPose call parser ──────────────────────────────────────────────────
+// ─── Drive-to-pose call parser ────────────────────────────────────────────────
 
-function parseDriveToPose(raw: string, expressionPoseMap?: ExpressionPoseMap): Omit<DriveWaypoint, 'nodeId'> | null {
-  const dtpIdx = raw.indexOf('DriveToPose(');
-  if (dtpIdx === -1) return null;
+/** Command names always recognised as drive-to-pose commands. */
+export const DEFAULT_DRIVE_COMMANDS = ['DriveToPose'];
 
-  const argsStr = getCallArgs(raw.slice(dtpIdx + 'DriveToPose'.length));
-  const args    = splitTopLevel(argsStr);
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Strip a trailing `()` / `(` and surrounding whitespace from a configured name. */
+export function normaliseCommandName(name: string): string {
+  return name.replace(/\s*\(\s*\)?\s*$/, '').trim();
+}
+
+const ANGLE_UNIT  = /_(deg|rad|tr)\b/;
+const LENGTH_UNIT = /_(mm|cm|m|ft|in)\b/;
+const BOOL_ARG    = /^(true|false)$/;
+const PLAIN_NUM   = /^[+-]?\d*\.?\d+$/;
+
+/**
+ * Parse a drive-to-pose call out of a leaf's raw source.
+ *
+ * Matches any of `commandNames` as a function call. The first argument is
+ * always the target pose; the remaining arguments (speed, position tolerance,
+ * rotation tolerance, flip-for-red) are detected by their *type* rather than
+ * their position, so commands with different parameter orderings — e.g.
+ * `DriveToPose(pose, speed, posTol, rotTol, flip)` vs
+ * `AutonomousDriveTo(pose, flip, speed, posTol, rotTol)` — both parse correctly.
+ */
+function parseDriveCommand(
+  raw: string,
+  commandNames: string[],
+  expressionPoseMap?: ExpressionPoseMap,
+): Omit<DriveWaypoint, 'nodeId'> | null {
+  // Find the earliest matching command call in the raw source.
+  let best: { name: string; parenIdx: number } | null = null;
+  for (const rawName of commandNames) {
+    const name = normaliseCommandName(rawName);
+    if (!name) continue;
+    // Require a non-word char (or start) before the name so "DriveToPose"
+    // doesn't match inside "MyDriveToPose".
+    const match = new RegExp(`(?:^|[^\\w])${escapeRegExp(name)}\\s*\\(`).exec(raw);
+    if (match) {
+      const parenIdx = match.index + match[0].length - 1;
+      if (!best || parenIdx < best.parenIdx) best = { name, parenIdx };
+    }
+  }
+  if (!best) return null;
+
+  const args = splitTopLevel(getCallArgs(raw.slice(best.parenIdx)));
   if (args.length < 1) return null;
 
   const pose = parsePoseArg(args[0], expressionPoseMap);
   if (pose.kind !== 'literal') return null;
 
-  const speedScaling = args[1] ? (parseFloat(args[1]) || 1.0) : 1.0;
-  const posTolMeters = args[2] ? parseMeters(args[2]) : 0.02;
-  const rotTolDeg    = args[3] ? parseDeg(args[3])    : 2.0;
-  const flipForRed   = args[4] ? args[4].trim() !== 'false' : true;
+  // Type-based detection of the trailing arguments.
+  let speedScaling = 1.0, posTolMeters = 0.02, rotTolDeg = 2.0, flipForRed = true;
+  let speedSet = false, posSet = false, rotSet = false, flipSet = false;
+  for (const arg of args.slice(1)) {
+    const t = arg.trim();
+    if (!flipSet  && BOOL_ARG.test(t))    { flipForRed   = t === 'true';  flipSet  = true; continue; }
+    if (!rotSet   && ANGLE_UNIT.test(t))  { rotTolDeg    = parseDeg(t);   rotSet   = true; continue; }
+    if (!posSet   && LENGTH_UNIT.test(t)) { posTolMeters = parseMeters(t); posSet  = true; continue; }
+    if (!speedSet && PLAIN_NUM.test(t))   { speedScaling = parseFloat(t); speedSet = true; continue; }
+  }
 
-  return { commandName: 'DriveToPose', pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw };
+  return { commandName: best.name, pose, speedScaling, posTolMeters, rotTolDeg, flipForRed, raw };
 }
 
 // ─── Tree walker ──────────────────────────────────────────────────────────────
 
-export function extractWaypoints(node: AnyCommandNode, expressionPoseMap?: ExpressionPoseMap): DriveWaypoint[] {
+export function extractWaypoints(
+  node: AnyCommandNode,
+  expressionPoseMap?: ExpressionPoseMap,
+  commandNames: string[] = DEFAULT_DRIVE_COMMANDS,
+): DriveWaypoint[] {
   switch (node.type) {
     case 'leaf': {
-      const dtp = parseDriveToPose(node.raw, expressionPoseMap);
+      const dtp = parseDriveCommand(node.raw, commandNames, expressionPoseMap);
       if (dtp) return [{ ...dtp, nodeId: node.id }];
       return [];
     }
 
     case 'sequence':
-      return node.children.flatMap(c => extractWaypoints(c, expressionPoseMap));
+      return node.children.flatMap(c => extractWaypoints(c, expressionPoseMap, commandNames));
 
     case 'parallel':
     case 'race':
-      return node.children.flatMap(c => extractWaypoints(c, expressionPoseMap));
+      return node.children.flatMap(c => extractWaypoints(c, expressionPoseMap, commandNames));
 
     case 'deadline':
-      return [node.deadline, ...node.others].flatMap(c => extractWaypoints(c, expressionPoseMap));
+      return [node.deadline, ...node.others].flatMap(c => extractWaypoints(c, expressionPoseMap, commandNames));
 
     case 'decorated':
-      return extractWaypoints(node.child, expressionPoseMap);
+      return extractWaypoints(node.child, expressionPoseMap, commandNames);
 
     case 'conditional':
       return [
-        ...extractWaypoints(node.trueBranch, expressionPoseMap),
-        ...extractWaypoints(node.falseBranch, expressionPoseMap),
+        ...extractWaypoints(node.trueBranch, expressionPoseMap, commandNames),
+        ...extractWaypoints(node.falseBranch, expressionPoseMap, commandNames),
       ];
 
     default:

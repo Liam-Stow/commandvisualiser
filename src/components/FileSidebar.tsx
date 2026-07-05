@@ -1,14 +1,17 @@
 import { useRef } from 'react';
 import type { ParsedFile } from '../types/command';
 import { LightningIcon, GearIcon, FileIcon, FolderIcon } from './Icons';
+import { DriveCommandsPanel } from './DriveCommandsPanel';
 
 interface Props {
   files: ParsedFile[];
   selectedFile: ParsedFile | null;
   watching: boolean;
+  driveCommandNames: string[];
   onSelectFile: (file: ParsedFile) => void;
   onLoadFiles: (files: FileList) => void;
   onOpenWithPicker: () => void;
+  onChangeDriveCommands: (names: string[]) => void;
 }
 
 interface FileItemProps {
@@ -58,7 +61,10 @@ function CategoryIcon({ cat }: { cat: ParsedFile['category'] }) {
   return <FileIcon />;
 }
 
-export function FileSidebar({ files, selectedFile, watching, onSelectFile, onLoadFiles, onOpenWithPicker }: Props) {
+export function FileSidebar({
+  files, selectedFile, watching, driveCommandNames,
+  onSelectFile, onLoadFiles, onOpenWithPicker, onChangeDriveCommands,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   /** Use the File System Access API picker when available, fall back to the
@@ -116,6 +122,8 @@ export function FileSidebar({ files, selectedFile, watching, onSelectFile, onLoa
           </>
         )}
       </div>
+
+      <DriveCommandsPanel commandNames={driveCommandNames} onChange={onChangeDriveCommands} />
 
       <div className="sidebar-footer">
         {watching && (
