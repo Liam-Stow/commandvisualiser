@@ -72,9 +72,10 @@ function ViewerHeader({
 interface Props {
   command: CommandFunction | null;
   expressionPoseMap?: ExpressionPoseMap;
+  driveCommandNames?: string[];
 }
 
-export function Viewer({ command, expressionPoseMap }: Props) {
+export function Viewer({ command, expressionPoseMap, driveCommandNames }: Props) {
   const [hoveredWaypointIndex, setHoveredWaypointIndex] = useState<number | null>(null);
   const [fieldHeight, setFieldHeight] = useState(() => Math.round(window.innerHeight / 2));
   const fieldHeightRef = useRef(fieldHeight);
@@ -90,8 +91,8 @@ export function Viewer({ command, expressionPoseMap }: Props) {
   const [zoom, setZoom] = useState(1.0);
 
   const waypoints: DriveWaypoint[] = useMemo(
-    () => command ? extractWaypoints(command.node, expressionPoseMap) : [],
-    [command, expressionPoseMap],
+    () => command ? extractWaypoints(command.node, expressionPoseMap, driveCommandNames) : [],
+    [command, expressionPoseMap, driveCommandNames],
   );
 
   const hasWaypoints = waypoints.length > 0;

@@ -177,6 +177,64 @@ describe('DriveToPose parameters', () => {
   });
 });
 
+// ─── Configurable command names ───────────────────────────────────────────────
+
+describe('configurable drive-command names', () => {
+  it('ignores an unconfigured command name by default', () => {
+    const node = leaf('AutonomousDriveTo(frc::Pose2d{7.8_m, 1.04_m, 90_deg}, false, 1.0, 20_cm)');
+    expect(extractWaypoints(node)).toHaveLength(0);
+  });
+
+  it('matches a custom command name when configured', () => {
+    const node = leaf('AutonomousDriveTo(frc::Pose2d{7.8_m, 1.04_m, 90_deg}, false, 1.0, 20_cm)');
+    const wp = extractWaypoints(node, undefined, ['DriveToPose', 'AutonomousDriveTo']);
+    expect(wp).toHaveLength(1);
+    expect(wp[0].commandName).toBe('AutonomousDriveTo');
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.x).toBeCloseTo(7.8);
+      expect(wp[0].pose.y).toBeCloseTo(1.04);
+      expect(wp[0].pose.rotation).toBeCloseTo(90);
+    }
+  });
+
+  it('detects args by type regardless of order (AutonomousDriveTo: pose, flip, speed, posTol, rotTol)', () => {
+    const node = leaf('AutonomousDriveTo(frc::Pose2d{7.8_m, 3.29_m, 90_deg}, false, 0.5, 20_cm, 3_deg)');
+    const wp = extractWaypoints(node, undefined, ['AutonomousDriveTo']);
+    expect(wp).toHaveLength(1);
+    expect(wp[0].speedScaling).toBeCloseTo(0.5);
+    expect(wp[0].posTolMeters).toBeCloseTo(0.20);
+    expect(wp[0].rotTolDeg).toBeCloseTo(3.0);
+    expect(wp[0].flipForRed).toBe(false);
+  });
+
+  it('accepts a name typed with trailing parentheses', () => {
+    const node = leaf('AutonomousDriveTo(frc::Pose2d{1_m, 1_m, 0_deg}, true, 1.0)');
+    const wp = extractWaypoints(node, undefined, ['AutonomousDriveTo()']);
+    expect(wp).toHaveLength(1);
+    expect(wp[0].flipForRed).toBe(true);
+  });
+
+  it('does not match a name as a substring of a longer identifier', () => {
+    const node = leaf('MyAutonomousDriveToHelper(frc::Pose2d{1_m, 1_m, 0_deg}, false, 1.0)');
+    const wp = extractWaypoints(node, undefined, ['AutonomousDriveTo']);
+    expect(wp).toHaveLength(0);
+  });
+
+  it('still resolves expression poses for custom commands', () => {
+    const poses: Pose2dConstant[] = [
+      { x: 2.0, y: 3.0, rotation: 45, qualifiedName: 'fieldConstants::OUTPOST' },
+    ];
+    const map = buildExpressionPoseMap(poses);
+    const node = leaf('AutonomousDriveTo(fieldConstants::OUTPOST, false, 1.0)');
+    const wp = extractWaypoints(node, map, ['AutonomousDriveTo']);
+    expect(wp).toHaveLength(1);
+    if (wp[0].pose.kind === 'literal') {
+      expect(wp[0].pose.x).toBeCloseTo(2.0);
+      expect(wp[0].pose.resolvedFrom).toBe('fieldConstants::OUTPOST');
+    }
+  });
+});
+
 // ─── Non-drive leaves ─────────────────────────────────────────────────────────
 
 describe('non-drive leaf commands', () => {

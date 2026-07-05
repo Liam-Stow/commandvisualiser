@@ -6,10 +6,26 @@ import type { ExpressionPoseMap, Pose2dConstant } from './parser/expressionPoseR
 import { FileSidebar } from './components/FileSidebar';
 import { CommandPanel } from './components/CommandPanel';
 import { Viewer } from './components/Viewer';
+import { DEFAULT_DRIVE_COMMANDS } from './parser/driveToPoseParser';
 
 // ─── File system helpers ──────────────────────────────────────────────────────
 
 const SOURCE_EXTS = ['.cpp', '.h', '.hpp'];
+
+// ─── Drive-command name persistence ────────────────────────────────────────────
+
+const DRIVE_COMMANDS_KEY = 'driveCommandNames';
+
+function loadDriveCommandNames(): string[] {
+  try {
+    const stored = localStorage.getItem(DRIVE_COMMANDS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.every(n => typeof n === 'string')) return parsed;
+    }
+  } catch { /* fall through to defaults */ }
+  return [...DEFAULT_DRIVE_COMMANDS];
+}
 
 /** Recursively walk a directory, yielding handles for every C++ source/header file. */
 async function* walkSourceFiles(
@@ -43,6 +59,14 @@ function sortFiles(files: ParsedFile[]): ParsedFile[] {
 export default function App() {
   const [files, setFiles] = useState<ParsedFile[]>([]);
   const [expressionPoseMap, setExpressionPoseMap] = useState<ExpressionPoseMap>(new Map());
+
+  // Names of functions to treat as "drive to pose" commands — persisted so the
+  // user's additions (e.g. AutonomousDriveTo) survive reloads.
+  const [driveCommandNames, setDriveCommandNames] = useState<string[]>(loadDriveCommandNames);
+  const handleChangeDriveCommands = useCallback((names: string[]) => {
+    setDriveCommandNames(names);
+    try { localStorage.setItem(DRIVE_COMMANDS_KEY, JSON.stringify(names)); } catch { /* ignore */ }
+  }, []);
 
   // Expose pose map on window for console debugging:
   //   showExpressionPoses()                            — log all expression→pose mappings
@@ -270,9 +294,11 @@ export default function App() {
         files={files}
         selectedFile={selectedFile}
         watching={watching}
+        driveCommandNames={driveCommandNames}
         onSelectFile={handleSelectFile}
         onLoadFiles={handleLoadFiles}
         onOpenWithPicker={handleOpenWithPicker}
+        onChangeDriveCommands={handleChangeDriveCommands}
       />
       <div
         className="resize-handle"
@@ -291,7 +317,7 @@ export default function App() {
           />
         </>
       )}
-      <Viewer command={selectedCommand} expressionPoseMap={expressionPoseMap} />
+      <Viewer command={selectedCommand} expressionPoseMap={expressionPoseMap} driveCommandNames={driveCommandNames} />
     </div>
   );
 }
